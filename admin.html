@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="icon.svg">
+<title>ניהול סיורים</title>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<style>
+  :root { --bg:#f4f6fa; --card:#fff; --fg:#1c2430; --mut:#5b6575; --line:#dfe4ec; --acc:#1f3b63;
+          --ok:#e3f6e8; --okT:#166534; --warn:#fff4d6; --warnT:#92400e; --err:#fde2e2; --errT:#991b1b; --sus:#f1e6fb; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif; font-size:15px; }
+  header { background:var(--acc); color:#fff; padding:12px 18px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  header h1 { font-size:18px; margin:0; }
+  nav button { background:none; border:0; color:#cbd5e1; font:inherit; padding:8px 10px; border-radius:8px; cursor:pointer; }
+  nav button.on { background:rgba(255,255,255,.15); color:#fff; }
+  main { padding:18px; max-width:1200px; margin:auto; }
+  .tab { display:none; } .tab.on { display:block; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+  h2 { font-size:18px; margin:0 0 12px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { padding:8px; border-bottom:1px solid var(--line); text-align:start; vertical-align:top; }
+  th { color:var(--mut); font-weight:600; background:#fafbfd; }
+  .row-ok { background:var(--ok); } .row-warn { background:var(--warn); } .row-err { background:var(--err); }
+  .pill { display:inline-block; padding:2px 8px; border-radius:20px; font-size:12px; font-weight:600; }
+  .p-ok { background:var(--ok); color:var(--okT); } .p-warn { background:var(--warn); color:var(--warnT); }
+  .p-err { background:var(--err); color:var(--errT); } .p-sus { background:var(--sus); color:#6b21a8; }
+  .kpis { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  .kpi { flex:1; min-width:120px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+  .kpi b { display:block; font-size:26px; }
+  .kpi span { color:var(--mut); font-size:13px; }
+  label { display:block; font-size:13px; color:var(--mut); margin-bottom:4px; }
+  input, select, textarea { font:inherit; width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+  .btn { background:var(--acc); color:#fff; border:0; border-radius:8px; padding:10px 16px; font:inherit; cursor:pointer; }
+  .btn.sec { background:#e8edf5; color:var(--acc); }
+  .btn.sm { padding:5px 10px; font-size:13px; }
+  .bar { display:flex; gap:10px; align-items:end; flex-wrap:wrap; margin-bottom:12px; }
+  .mut { color:var(--mut); font-size:13px; }
+  .hide { display:none !important; }
+  #login { max-width:360px; margin:12vh auto; }
+  .chk { width:auto; margin-inline-end:6px; }
+  .days label { display:inline-flex; align-items:center; margin-inline-end:10px; color:var(--fg); font-size:14px; }
+  /* תוויות QR */
+  #printArea { display:flex; flex-wrap:wrap; gap:12px; justify-content:center; }
+  .chip { display:inline-block; padding:2px 9px; border-radius:20px; color:#fff; font-size:12px; font-weight:700; }
+  .colors { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:10px; }
+  .colors label { display:flex; align-items:center; gap:8px; color:var(--fg); font-size:14px; border:1px solid var(--line); border-radius:8px; padding:6px 8px; margin:0; }
+  .colors input[type=color] { width:38px; height:28px; padding:0; border:0; background:none; }
+  .label { border:6px solid var(--tc,#94a3b8); border-radius:12px; padding:0 0 12px; text-align:center; background:#fff; overflow:hidden; break-inside:avoid; page-break-inside:avoid; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .label .tband { background:var(--tc,#94a3b8); color:#fff; font-weight:800; padding:6px; font-size:15px; letter-spacing:.5px; }
+  .label .site { display:inline-block; margin-top:8px; background:var(--sc,#94a3b8); color:#fff; font-weight:700; font-size:13px; padding:2px 12px; border-radius:20px; }
+  .label .site { font-size:13px; color:#5b6575; }
+  .label .pname { font-weight:700; margin-top:6px; }
+  .label .pid { font-size:12px; color:#5b6575; margin-top:2px; }
+  .label svg { display:block; margin:6px auto 0; }
+  .L-small { width:31%; } .L-small svg { width:150px; height:150px; } .L-small .pname { font-size:18px; }
+  .L-large { width:100%; page-break-after:always; padding-bottom:40px; border-width:14px; } .L-large svg { width:380px; height:380px; } .L-large .pname { font-size:40px; } .L-large .site { font-size:20px; } .L-large .tband { font-size:30px; padding:14px; }
+  @media print {
+    body * { visibility:hidden; }
+    #printArea, #printArea * { visibility:visible; }
+    #printArea { position:absolute; inset:0; }
+    @page { margin:12mm; }
+  }
+</style>
+</head>
+<body>
+
+<div id="login" class="card">
+  <h2>כניסת מנהל</h2>
+  <input id="pw" type="password" placeholder="סיסמת מנהל" style="margin-bottom:10px">
+  <button class="btn" id="btnLogin" style="width:100%">כניסה</button>
+  <p class="mut" id="loginMsg"></p>
+</div>
+
+<div id="app" class="hide">
+<header>
+  <h1 id="title">ניהול סיורים</h1>
+  <nav>
+    <button data-tab="dash" class="on">דשבורד</button>
+    <button data-tab="points">נקודות ותזמונים</button>
+    <button data-tab="qr">הדפסת ברקודים</button>
+    <button data-tab="export">ייצוא</button>
+  </nav>
+</header>
+<main>
+
+  <!-- דשבורד -->
+  <section id="tab-dash" class="tab on">
+    <div class="bar"><div class="mut" id="dashTime"></div><div style="flex:1"></div>
+      <button class="btn sec sm" id="btnRefresh">רענן</button>
+      <button class="btn sec sm" id="btnReport">שלח דוח שבועי עכשיו (בדיקה)</button></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="card"><h2>מצב הנקודות היום</h2>
+      <p class="mut">נספרים רק סיורים שחלון הזמן שלהם כבר נסגר. ירוק = הכול בוצע בטווח, אדום = יש סיורים שהוחמצו (מעבר עם העכבר על המספר מציג מתי).</p>
+      <table id="tblToday"></table></div>
+    <div class="card"><h2>סריקות אחרונות היום</h2><table id="tblScans"></table></div>
+  </section>
+
+  <!-- נקודות -->
+  <section id="tab-points" class="tab">
+    <div class="card">
+      <h2 id="formTitle">נקודה חדשה</h2>
+      <div class="grid">
+        <div><label>שם נקודה *</label><input id="f_name" placeholder="חדר UPS 2"></div>
+        <div><label>קוד אתר</label><input id="f_site" placeholder="DC-A"></div>
+        <div><label>תיאור</label><input id="f_desc"></div>
+        <div><label>צוות</label><input id="f_team" list="teams" placeholder="חשמל / ניקיון"><datalist id="teams"></datalist></div>
+        <div><label>סוג כלל</label><select id="f_rule"></select></div>
+      </div>
+      <p class="mut" id="ruleHelp" style="margin:12px 0"></p>
+      <div class="grid">
+        <div data-for="שעות קבועות"><label>שעות (מופרדות בפסיק)</label><input id="f_times" placeholder="08:00,12:00,16:00"></div>
+        <div data-for="מרווח"><label>כל כמה שעות</label><input id="f_every" type="number" step="0.5" min="0.5" placeholder="2"></div>
+        <div data-for="מרווח כמות בחלון"><label>שעת התחלה</label><input id="f_start" type="time"></div>
+        <div data-for="מרווח כמות בחלון"><label>שעת סיום</label><input id="f_end" type="time"></div>
+        <div data-for="כמות בחלון משמרת"><label>כמות סריקות נדרשת</label><input id="f_count" type="number" min="1" placeholder="1"></div>
+        <div data-for="משמרת"><label>משמרות (ריק = כולן)</label><input id="f_shifts" placeholder="בוקר,ערב,לילה"></div>
+        <div data-for="שעות קבועות מרווח"><label>טולרנס ± דקות (ריק = ברירת מחדל)</label><input id="f_tol" type="number" min="0"></div>
+        <div><label>מרווח מינימלי בין סריקות (דק')</label><input id="f_gap" type="number" min="0" placeholder="ללא"></div>
+      </div>
+      <div style="margin-top:12px"><label>ימים</label><div class="days" id="f_days"></div></div>
+      <div style="margin-top:12px"><label style="display:inline-flex;align-items:center;color:var(--fg)"><input type="checkbox" class="chk" id="f_active" checked>פעיל</label></div>
+      <div class="bar" style="margin-top:14px">
+        <button class="btn" id="btnSave">שמור נקודה</button>
+        <button class="btn sec" id="btnNew">נקה טופס</button>
+        <span class="mut" id="saveMsg"></span>
+      </div>
+    </div>
+    <div class="card"><h2>צבעים לפי צוות ואתר</h2>
+      <p class="mut">הצבעים מופיעים על תוויות הברקוד, בדשבורד, בדוח ובטלפון. אפשר לשנות גם בלשונית "צבעים" בגיליון.</p>
+      <div class="mut" style="margin:6px 0">צוותים</div><div class="colors" id="clrTeams"></div>
+      <div class="mut" style="margin:12px 0 6px">אתרים</div><div class="colors" id="clrSites"></div>
+      <div class="bar" style="margin-top:12px"><button class="btn" id="btnColors">שמור צבעים</button><span class="mut" id="clrMsg"></span></div>
+    </div>
+    <div class="card"><h2>כל הנקודות</h2>
+      <p class="mut">כדי להפסיק נקודה, בטל את הסימון "פעיל" (ההיסטוריה שלה נשמרת). אפשר לערוך גם ישירות בגיליון.</p>
+      <table id="tblPoints"></table></div>
+  </section>
+
+  <!-- QR -->
+  <section id="tab-qr" class="tab">
+    <div class="card">
+      <h2>הדפסת ברקודים</h2>
+      <div class="bar">
+        <div><label>גודל תווית</label><select id="qrSize" style="width:200px">
+          <option value="small">קטן (מספר תוויות בעמוד)</option><option value="large">גדול (תווית בעמוד)</option></select></div>
+        <button class="btn sec" id="btnAll">בחר הכול</button>
+        <button class="btn" id="btnPrint">הדפס / שמור כ-PDF</button>
+      </div>
+      <p class="mut">בחלון ההדפסה בחר "שמור כ-PDF" כדי לקבל קובץ. לכל נקודה יש גם כפתור להורדת PNG.</p>
+      <table id="tblQr"></table>
+    </div>
+    <div class="card"><h2>תצוגה מקדימה</h2><div id="printArea"></div></div>
+  </section>
+
+  <!-- ייצוא -->
+  <section id="tab-export" class="tab">
+    <div class="card">
+      <h2>ייצוא סריקות ל-Excel</h2>
+      <div class="bar">
+        <div><label>מתאריך</label><input type="date" id="exFrom"></div>
+        <div><label>עד תאריך</label><input type="date" id="exTo"></div>
+        <button class="btn" id="btnExport">הורד קובץ CSV</button>
+        <span class="mut" id="exMsg"></span>
+      </div>
+      <p class="mut">הקובץ נפתח ישירות ב-Excel עם תמיכה בעברית.</p>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const DAYS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
+const RULE_HELP = {
+  'שעות קבועות': 'סריקה בשעות מוגדרות, בתוך טווח של ± הטולרנס (למשל 08:00 ±15 = 07:45–08:15). לא נסרק בטווח = הוחמץ.',
+  'מרווח': 'סריקה כל X שעות בין שעת ההתחלה לסיום, כל אחת בטווח ± הטולרנס. לא נסרק בטווח = הוחמץ.',
+  'כמות בחלון': 'X סריקות בכל יום בתוך טווח שעות (למשל 3 ניקיונות בין 08:00 ל-16:00). סריקה מחוץ לטווח לא נספרת. מתאים למנקים.',
+  'משמרת': 'X סריקות בכל משמרת (המשמרות מוגדרות בלשונית "משמרות"). מתאים לחשמלאים.'
+};
+let token = sessionStorage.getItem('adm');
+let data = null, editingId = '';
+
+async function api(action, body = {}) {
+  const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, token, ...body }) });
+  const j = await r.json();
+  if (!j.ok) {
+    if (String(j.error).startsWith('AUTH')) { sessionStorage.removeItem('adm'); location.reload(); }
+    throw new Error(j.error);
+  }
+  return j.data;
+}
+
+/* ---------- כניסה ---------- */
+$('btnLogin').onclick = async () => {
+  $('loginMsg').textContent = 'בודק…';
+  try {
+    token = (await api('admin.login', { password: $('pw').value })).token;
+    sessionStorage.setItem('adm', token);
+    start();
+  } catch (e) { $('loginMsg').textContent = e.message; }
+};
+$('pw').onkeydown = (e) => { if (e.key === 'Enter') $('btnLogin').click(); };
+
+async function start() {
+  $('login').classList.add('hide'); $('app').classList.remove('hide');
+  await loadData();
+  loadToday();
+}
+
+/* ---------- טאבים ---------- */
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id === 'tab-' + b.dataset.tab));
+  if (b.dataset.tab === 'dash') loadToday();
+  if (b.dataset.tab === 'qr') renderQrList();
+});
+
+/* ---------- נתונים ---------- */
+async function loadData() {
+  data = await api('admin.data');
+  $('title').textContent = 'ניהול סיורים · ' + (data.site || '');
+  $('f_rule').innerHTML = data.rules.map(r => '<option>' + esc(r) + '</option>').join('');
+  $('teams').innerHTML = [...new Set(data.employees.map(e => e['צוות']).concat(data.points.map(p => p['צוות'])))]
+    .filter(Boolean).map(t => '<option value="' + esc(t) + '">').join('');
+  $('f_days').innerHTML = DAYS.map(d => '<label><input type="checkbox" class="chk" value="' + d + '" checked>' + d + "'</label>").join('');
+  renderPoints();
+  renderColors();
+  ruleChanged();
+}
+
+function ruleText(p) {
+  const r = p['סוג כלל'];
+  if (r === 'שעות קבועות') return 'בשעות ' + p['שעות קבועות'] + (p["טולרנס (דק')"] ? ' ±' + p["טולרנס (דק')"] : '');
+  if (r === 'מרווח') return 'כל ' + p['כל X שעות'] + " ש' " + p['התחלה'] + '–' + p['סיום'];
+  if (r === 'כמות בחלון') return p['כמות נדרשת'] + ' פעמים ' + p['התחלה'] + '–' + p['סיום'];
+  if (r === 'משמרת') return (p['כמות נדרשת'] || 1) + ' בכל משמרת' + (p['משמרות'] ? ' (' + p['משמרות'] + ')' : '');
+  return r;
+}
+const isOn = (v) => /^(true|כן|1)$/i.test(String(v));
+const PALETTE = ['#0891B2', '#DB2777', '#65A30D', '#EA580C', '#7C3AED', '#0D9488', '#B45309', '#4F46E5'];
+function colorOf(map, name) {   // זהה ל-colorOf_ בשרת
+  if (!name) return '#94A3B8';
+  if (map[name]) return map[name];
+  let h = 0; for (const ch of String(name)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
+const teamClr = (t) => colorOf((data && data.colors.teams) || {}, t);
+const siteClr = (s) => colorOf((data && data.colors.sites) || {}, s);
+const chip = (txt, hex) => txt ? '<span class="chip" style="background:' + hex + '">' + esc(txt) + '</span>' : '';
+const teamChip = (t) => chip(t, teamClr(t));
+const siteChip = (s) => chip(s, siteClr(s));
+
+function renderColors() {
+  const teams = [...new Set(Object.keys(data.colors.teams).concat(data.points.map(p => p['צוות']), data.employees.map(e => e['צוות'])))].filter(Boolean);
+  const sites = [...new Set(Object.keys(data.colors.sites).concat(data.points.map(p => p['קוד אתר'])))].filter(Boolean);
+  const row = (kind, n, c) => '<label><input type="color" data-kind="' + kind + '" data-name="' + esc(n) + '" value="' + c + '">' + esc(n) + '</label>';
+  $('clrTeams').innerHTML = teams.map(t => row('teams', t, teamClr(t))).join('') || '<span class="mut">אין צוותים</span>';
+  $('clrSites').innerHTML = sites.map(s => row('sites', s, siteClr(s))).join('') || '<span class="mut">אין אתרים</span>';
+}
+$('btnColors').onclick = async () => {
+  const colors = { teams: {}, sites: {} };
+  document.querySelectorAll('.colors input[type=color]').forEach(i => colors[i.dataset.kind][i.dataset.name] = i.value);
+  $('clrMsg').textContent = 'שומר…';
+  try { data.colors = await api('admin.saveColors', { colors }); renderPoints(); $('clrMsg').textContent = 'נשמר ✓'; }
+  catch (e) { $('clrMsg').textContent = e.message; }
+};
+
+function renderPoints() {
+  $('tblPoints').innerHTML = '<tr><th>ID</th><th>שם</th><th>אתר</th><th>צוות</th><th>כלל</th><th>ימים</th><th>פעיל</th><th></th></tr>' +
+    data.points.map(p => '<tr><td>' + esc(p.PointID) + '</td><td>' + esc(p['שם נקודה']) + '</td><td>' + siteChip(p['קוד אתר']) + '</td><td>' + teamChip(p['צוות']) +
+      '</td><td>' + esc(ruleText(p)) + '</td><td>' + esc(p['ימים'] || 'כל יום') + '</td><td>' + (isOn(p['פעיל']) ? '✓' : '—') +
+      '</td><td><button class="btn sec sm" data-edit="' + esc(p.PointID) + '">ערוך</button></td></tr>').join('');
+  document.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => editPoint(b.dataset.edit));
+}
+
+/* ---------- טופס נקודה ---------- */
+function ruleChanged() {
+  const r = $('f_rule').value;
+  // אילו שדות רלוונטיים לכל סוג כלל
+  const map = {
+    'שעות קבועות': ['f_times', 'f_tol'], 'מרווח': ['f_every', 'f_start', 'f_end', 'f_tol'],
+    'כמות בחלון': ['f_start', 'f_end', 'f_count'], 'משמרת': ['f_count', 'f_shifts']
+  };
+  ['f_times', 'f_every', 'f_start', 'f_end', 'f_count', 'f_shifts', 'f_tol'].forEach(id =>
+    $(id).parentElement.classList.toggle('hide', (map[r] || []).indexOf(id) < 0));
+  $('ruleHelp').textContent = RULE_HELP[r] || '';
+}
+$('f_rule').onchange = ruleChanged;
+
+function clearForm() {
+  editingId = '';
+  ['f_name', 'f_site', 'f_desc', 'f_team', 'f_times', 'f_every', 'f_start', 'f_end', 'f_count', 'f_shifts', 'f_tol', 'f_gap']
+    .forEach(id => $(id).value = '');
+  $('f_active').checked = true;
+  $('f_days').querySelectorAll('input').forEach(c => c.checked = true);
+  $('formTitle').textContent = 'נקודה חדשה';
+  $('saveMsg').textContent = '';
+  ruleChanged();
+}
+$('btnNew').onclick = clearForm;
+
+const toTimeInput = (s) => { const m = String(s || '').match(/^(\d{1,2}):(\d{2})/); return m ? m[1].padStart(2, '0') + ':' + m[2] : ''; };
+
+function editPoint(id) {
+  const p = data.points.find(x => x.PointID === id); if (!p) return;
+  editingId = id;
+  $('f_name').value = p['שם נקודה']; $('f_site').value = p['קוד אתר']; $('f_desc').value = p['תיאור'];
+  $('f_team').value = p['צוות']; $('f_rule').value = p['סוג כלל'];
+  $('f_times').value = p['שעות קבועות']; $('f_every').value = p['כל X שעות'];
+  $('f_start').value = toTimeInput(p['התחלה']); $('f_end').value = toTimeInput(p['סיום']);
+  $('f_count').value = p['כמות נדרשת']; $('f_shifts').value = p['משמרות'];
+  $('f_tol').value = p["טולרנס (דק')"]; $('f_gap').value = p["מרווח מינימלי (דק')"];
+  const days = String(p['ימים'] || '').split(/[,\s]+/).filter(Boolean);
+  $('f_days').querySelectorAll('input').forEach(c => c.checked = !days.length || days.indexOf(c.value) >= 0);
+  $('f_active').checked = isOn(p['פעיל']);
+  $('formTitle').textContent = 'עריכת נקודה ' + id;
+  ruleChanged();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+$('btnSave').onclick = async () => {
+  const rule = $('f_rule').value;
+  const days = [...$('f_days').querySelectorAll('input:checked')].map(c => c.value);
+  const pt = {
+    'PointID': editingId, 'שם נקודה': $('f_name').value.trim(), 'קוד אתר': $('f_site').value.trim(),
+    'תיאור': $('f_desc').value.trim(), 'צוות': $('f_team').value.trim(), 'סוג כלל': rule,
+    'שעות קבועות': rule === 'שעות קבועות' ? $('f_times').value.replace(/\s/g, '') : '',
+    'כל X שעות': rule === 'מרווח' ? $('f_every').value : '',
+    'התחלה': ['מרווח', 'כמות בחלון'].includes(rule) ? $('f_start').value : '',
+    'סיום': ['מרווח', 'כמות בחלון'].includes(rule) ? $('f_end').value : '',
+    'כמות נדרשת': ['כמות בחלון', 'משמרת'].includes(rule) ? ($('f_count').value || '1') : '',
+    'משמרות': rule === 'משמרת' ? $('f_shifts').value.replace(/\s/g, '') : '',
+    'ימים': days.length === 7 ? '' : days.join(','),
+    "טולרנס (דק')": ['שעות קבועות', 'מרווח'].includes(rule) ? $('f_tol').value : '',
+    "מרווח מינימלי (דק')": $('f_gap').value, 'פעיל': $('f_active').checked
+  };
+  // בדיקות בסיסיות
+  const err = !pt['שם נקודה'] ? 'חסר שם נקודה'
+    : rule === 'שעות קבועות' && !/^\d{1,2}:\d{2}(,\d{1,2}:\d{2})*$/.test(pt['שעות קבועות']) ? 'פורמט שעות: 08:00,12:00'
+    : rule === 'מרווח' && (!pt['כל X שעות'] || !pt['התחלה']) ? 'חסר מרווח או שעת התחלה'
+    : rule === 'כמות בחלון' && (!pt['התחלה'] || !pt['סיום'] || pt['סיום'] <= pt['התחלה']) ? 'חלון זמן לא תקין (הסיום חייב להיות אחרי ההתחלה)'
+    : !days.length ? 'בחר לפחות יום אחד' : '';
+  if (err) { $('saveMsg').textContent = err; return; }
+  $('saveMsg').textContent = 'שומר…';
+  try {
+    const r = await api('admin.savePoint', { point: pt });
+    await loadData();
+    clearForm();
+    $('saveMsg').textContent = 'נשמר ✓ (' + r.id + ')';
+  } catch (e) { $('saveMsg').textContent = e.message; }
+};
+
+/* ---------- דשבורד ---------- */
+let dashTimer = null;
+async function loadToday() {
+  clearTimeout(dashTimer);
+  try {
+    const t = await api('admin.today');
+    $('dashTime').textContent = 'עודכן: ' + t.now + ' · מתרענן כל 30 שניות';
+    data.colors = t.colors || data.colors;
+    const sum = t.points.reduce((a, p) => { ['required', 'on', 'missed', 'suspect'].forEach(k => a[k] += p[k]); return a; },
+      { required: 0, on: 0, missed: 0, suspect: 0 });
+    const pct = sum.required ? Math.round(sum.on / sum.required * 100) + '%' : '—';
+    $('kpis').innerHTML = [['עמידה היום', pct], ['בוצעו בזמן', sum.on], ['הוחמצו', sum.missed], ['חשודות', sum.suspect], ['סריקות היום', t.scans.length]]
+      .map(k => '<div class="kpi"><b>' + k[1] + '</b><span>' + k[0] + '</span></div>').join('');
+    t.points.sort((a, b) => String(a.site).localeCompare(b.site) || String(a.team).localeCompare(b.team));
+    $('tblToday').innerHTML = '<tr><th>אתר</th><th>צוות</th><th>נקודה</th><th>כלל</th><th>נדרש עד עכשיו</th><th>בוצעו</th><th>הוחמצו</th><th>סריקה אחרונה</th></tr>' +
+      t.points.map(p => '<tr class="' + (p.missed ? 'row-err' : p.required ? 'row-ok' : '') + '"><td>' + siteChip(p.site) + '</td><td>' + teamChip(p.team) +
+        '</td><td>' + esc(p.name) + '</td><td>' + esc(p.rule) + '</td><td>' + p.required + '</td><td>' + p.on +
+        '</td><td title="' + esc(p.missedList.join('\n')) + '">' + p.missed + '</td><td>' + esc(String(p.last).slice(11)) + '</td></tr>').join('');
+    const pill = (s) => '<span class="pill ' + (s === 'בזמן' ? 'p-ok' : s === 'כפול' ? 'p-warn' : 'p-err') + '">' + esc(s) + '</span>';
+    $('tblScans').innerHTML = '<tr><th>שעה</th><th>צוות</th><th>נקודה</th><th>עובד</th><th>סטטוס</th><th>סטייה</th><th>הערות</th></tr>' +
+      (t.scans.length ? t.scans.map(s => '<tr><td>' + esc(s.time.slice(11)) + '</td><td>' + teamChip(s.team) + '</td><td>' + esc(s.point) + '</td><td>' + esc(s.emp) +
+        '</td><td>' + pill(s.status) + (s.suspect ? ' <span class="pill p-sus" title="' + esc(s.suspect) + '">חשד</span>' : '') +
+        '</td><td>' + (s.dev !== '' ? esc(s.dev) + "'" : '') + '</td><td class="mut">' + esc([s.note, s.suspect].filter(Boolean).join(' · ')) + '</td></tr>').join('')
+        : '<tr><td colspan="7" class="mut">אין סריקות היום</td></tr>');
+  } catch (e) { $('dashTime').textContent = 'שגיאה: ' + e.message; }
+  if ($('tab-dash').classList.contains('on')) dashTimer = setTimeout(loadToday, 30000);
+}
+$('btnRefresh').onclick = loadToday;
+$('btnReport').onclick = async () => {
+  if (!confirm('לשלוח עכשיו את הדוח של השבוע הקודם לנמענים שבהגדרות?')) return;
+  try { const r = await api('admin.sendReport'); alert('נשלח אל ' + r.sentTo + ' (' + r.from + ' – ' + r.to + ')'); }
+  catch (e) { alert('שגיאה: ' + e.message); }
+};
+
+/* ---------- ברקודים ---------- */
+const qrText = (id) => 'PT:' + id;
+function qrSvg(id) {
+  const q = qrcode(0, 'M'); q.addData(qrText(id)); q.make();
+  return q.createSvgTag({ cellSize: 8, margin: 2, scalable: true });
+}
+function renderQrList() {
+  const pts = data.points.filter(p => isOn(p['פעיל']));
+  $('tblQr').innerHTML = '<tr><th></th><th>ID</th><th>שם</th><th>צוות / אתר</th><th></th></tr>' + pts.map(p =>
+    '<tr><td><input type="checkbox" class="chk qrsel" value="' + esc(p.PointID) + '" checked></td><td>' + esc(p.PointID) + '</td><td>' +
+    esc(p['שם נקודה']) + '</td><td>' + teamChip(p['צוות']) + ' ' + siteChip(p['קוד אתר']) + '</td><td><button class="btn sec sm" data-png="' + esc(p.PointID) + '">הורד PNG</button></td></tr>').join('');
+  document.querySelectorAll('.qrsel').forEach(c => c.onchange = renderLabels);
+  document.querySelectorAll('[data-png]').forEach(b => b.onclick = () => downloadPng(b.dataset.png));
+  renderLabels();
+}
+function renderLabels() {
+  const size = $('qrSize').value;
+  const ids = [...document.querySelectorAll('.qrsel:checked')].map(c => c.value);
+  $('printArea').innerHTML = ids.map(id => {
+    const p = data.points.find(x => x.PointID === id);
+    return '<div class="label L-' + size + '" style="--tc:' + teamClr(p['צוות']) + ';--sc:' + siteClr(p['קוד אתר']) + '">' +
+      '<div class="tband">' + (p['צוות'] ? 'צוות ' + esc(p['צוות']) : esc(data.site)) + '</div>' +
+      (p['קוד אתר'] ? '<div class="site">' + esc(p['קוד אתר']) + '</div>' : '') + qrSvg(id) +
+      '<div class="pname">' + esc(p['שם נקודה']) + '</div><div class="pid">' + esc(id) + ' · ' + esc(data.site) + '</div></div>';
+  }).join('');
+}
+$('qrSize').onchange = renderLabels;
+$('btnAll').onclick = () => { const all = document.querySelectorAll('.qrsel'); const v = [...all].some(c => !c.checked); all.forEach(c => c.checked = v); renderLabels(); };
+$('btnPrint').onclick = () => { if (!document.querySelector('.qrsel:checked')) return alert('לא נבחרו נקודות'); window.print(); };
+
+function downloadPng(id) {
+  const p = data.points.find(x => x.PointID === id);
+  const tc = teamClr(p['צוות']), sc = siteClr(p['קוד אתר']);
+  const q = qrcode(0, 'M'); q.addData(qrText(id)); q.make();
+  const n = q.getModuleCount(), cell = 14, margin = 4, qsz = (n + margin * 2) * cell;
+  const B = 24, W = Math.max(qsz, 700) + B * 2, band = 90, H = band + 70 + qsz + 170 + B;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d');
+  x.fillStyle = tc; x.fillRect(0, 0, W, H);                       // מסגרת בצבע הצוות
+  x.fillStyle = '#fff'; x.fillRect(B, band, W - B * 2, H - band - B);
+  x.textAlign = 'center'; x.direction = 'rtl';
+  x.fillStyle = '#fff'; x.font = 'bold 50px Arial';
+  x.fillText(p['צוות'] ? 'צוות ' + p['צוות'] : data.site, W / 2, 62);
+  if (p['קוד אתר']) {                                             // תגית בצבע האתר
+    x.font = 'bold 30px Arial';
+    const tw = x.measureText(p['קוד אתר']).width + 50;
+    x.fillStyle = sc; x.beginPath(); x.roundRect((W - tw) / 2, band + 14, tw, 46, 23); x.fill();
+    x.fillStyle = '#fff'; x.fillText(p['קוד אתר'], W / 2, band + 48);
+  }
+  const ox = (W - qsz) / 2, oy = band + 70;
+  x.fillStyle = '#000';
+  for (let r = 0; r < n; r++) for (let col = 0; col < n; col++)
+    if (q.isDark(r, col)) x.fillRect(ox + (col + margin) * cell, oy + (r + margin) * cell, cell, cell);
+  x.fillStyle = '#1c2430'; x.font = 'bold 56px Arial';
+  x.fillText(p['שם נקודה'], W / 2, oy + qsz + 75);
+  x.fillStyle = '#5b6575'; x.font = '28px Arial';
+  x.fillText(id + ' · ' + data.site, W / 2, oy + qsz + 125);
+  const a = document.createElement('a');
+  a.download = id + ' - ' + p['שם נקודה'] + '.png'; a.href = c.toDataURL('image/png'); a.click();
+}
+
+/* ---------- ייצוא ---------- */
+(function initDates() {
+  const t = new Date(), f = new Date(); f.setDate(t.getDate() - 7);
+  const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  $('exFrom').value = iso(f); $('exTo').value = iso(t);
+})();
+$('btnExport').onclick = async () => {
+  $('exMsg').textContent = 'מוריד…';
+  try {
+    const r = await api('admin.scans', { from: $('exFrom').value, to: $('exTo').value });
+    const cell = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const csv = '﻿' + [r.cols].concat(r.rows).map(row => row.map(cell).join(',')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'סריקות ' + $('exFrom').value + ' עד ' + $('exTo').value + '.csv';
+    a.click();
+    $('exMsg').textContent = r.rows.length + ' שורות';
+  } catch (e) { $('exMsg').textContent = e.message; }
+};
+
+if (token) start().catch(() => { sessionStorage.removeItem('adm'); location.reload(); });
+</script>
+</body>
+</html>

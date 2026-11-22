@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<title>סורק סיורים</title>
+<script src="config.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  :root { --bg:#0f172a; --card:#1e293b; --fg:#f1f5f9; --mut:#94a3b8; --ok:#16a34a; --warn:#d97706; --err:#dc2626; --acc:#3b82f6; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif; overscroll-behavior:none; }
+  header { border-bottom:5px solid var(--tc,#1e293b); }
+  header { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#020617; font-size:15px; min-height:46px; }
+  #who { font-weight:600; }
+  #net { font-size:13px; color:var(--mut); }
+  #net .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-inline-end:5px; vertical-align:middle; }
+  .screen { display:none; padding:18px; }
+  .screen.on { display:block; }
+  h2 { margin:6px 0 16px; font-size:22px; }
+  input,button { font:inherit; }
+  input { width:100%; padding:14px; border-radius:10px; border:1px solid #334155; background:var(--card); color:var(--fg); margin-bottom:12px; font-size:17px; }
+  .btn { width:100%; padding:16px; border:0; border-radius:12px; background:var(--acc); color:#fff; font-size:18px; font-weight:600; }
+  .btn:active { opacity:.8; }
+  .msg { color:var(--mut); font-size:14px; margin-top:10px; min-height:20px; }
+  .team { font-size:14px; font-weight:700; margin:18px 0 8px; padding:4px 10px; border-radius:8px; display:inline-block; color:#fff; }
+  .emp { border-inline-start:6px solid var(--tc,#334155) !important; }
+  .emp { display:block; width:100%; text-align:start; padding:18px; margin-bottom:10px; border-radius:12px; border:1px solid #334155; background:var(--card); color:var(--fg); font-size:19px; }
+  #scr-scan { padding:0; }
+  #reader { width:100%; background:#000; min-height:60vh; }
+  #reader video { object-fit:cover; }
+  #hint { text-align:center; padding:14px; color:var(--mut); font-size:16px; }
+  #btnSwitch { display:block; margin:6px auto 20px; background:none; border:1px solid #334155; color:var(--mut); padding:10px 18px; border-radius:10px; font-size:14px; }
+  #overlay { position:fixed; inset:0; display:none; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:24px; z-index:10; }
+  #overlay.show { display:flex; }
+  #overlay.ok { background:var(--ok); } #overlay.warn { background:var(--warn); } #overlay.err { background:var(--err); }
+  #ovIcon { font-size:96px; line-height:1; }
+  #ovTitle { font-size:30px; font-weight:700; margin-top:14px; }
+  #ovSub { font-size:24px; margin-top:10px; }
+  #ovStatus { font-size:18px; margin-top:18px; opacity:.95; min-height:24px; }
+  #ovChips { margin-top:14px; } #ovChips span { display:inline-block; margin:0 4px; padding:3px 12px; border-radius:20px; background:#fff; font-weight:700; font-size:15px; }
+</style>
+</head>
+<body>
+<header><div id="who">סורק סיורים</div><div id="net"></div></header>
+
+<!-- אישור מכשיר (פעם אחת) -->
+<section id="scr-register" class="screen">
+  <h2>הפעלת טלפון סיורים</h2>
+  <p class="msg" style="margin-top:0">הגדרה חד־פעמית על ידי מנהל המערכת.</p>
+  <input id="regName" placeholder="שם המכשיר (למשל: טלפון סיורים 1)">
+  <input id="regPw" type="password" placeholder="סיסמת מנהל">
+  <button class="btn" id="btnReg">אשר מכשיר</button>
+  <div class="msg" id="regMsg"></div>
+</section>
+
+<!-- בחירת עובד בתחילת משמרת -->
+<section id="scr-employee" class="screen">
+  <h2>מי במשמרת?</h2>
+  <div id="empList"></div>
+  <div class="msg" id="empMsg"></div>
+</section>
+
+<!-- מסך סריקה -->
+<section id="scr-scan" class="screen">
+  <div id="reader"></div>
+  <div id="hint">כוון את המצלמה אל הברקוד</div>
+  <button id="btnSwitch">החלף עובד</button>
+</section>
+
+<div id="overlay"><div id="ovIcon"></div><div id="ovTitle"></div><div id="ovSub"></div><div id="ovChips"></div><div id="ovStatus"></div></div>
+
+<script>
+/* ---------- אחסון מקומי ---------- */
+const LS = {
+  get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v === null ? d : v; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+let cfg = LS.get('cfg', null);
+let deviceId = LS.get('deviceId', null);
+let emp = LS.get('emp', null);
+let queue = LS.get('queue', []);          // סריקות שעוד לא נשלחו לשרת
+let lastByPoint = LS.get('lastByPoint', {});
+
+const $ = (id) => document.getElementById(id);
+const pad = (n) => String(n).padStart(2, '0');
+const hm = (d) => pad(d.getHours()) + ':' + pad(d.getMinutes());
+const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const PALETTE = ['#0891B2', '#DB2777', '#65A30D', '#EA580C', '#7C3AED', '#0D9488', '#B45309', '#4F46E5'];
+function colorOf(map, name) {   // זהה ל-colorOf_ בשרת
+  map = map || {};
+  if (!name) return '#94A3B8';
+  if (map[name]) return map[name];
+  let h = 0; for (const ch of String(name)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
+const teamClr = (t) => colorOf(cfg && cfg.colors && cfg.colors.teams, t);
+const siteClr = (s) => colorOf(cfg && cfg.colors && cfg.colors.sites, s);
+const uuid = () => (crypto.randomUUID ? crypto.randomUUID() :
+  'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2));
+
+/* ---------- תקשורת עם Apps Script ---------- */
+async function api(action, data = {}) {
+  // בלי headers => בקשה "פשוטה" (text/plain), כך נמנעת בעיית CORS מול Apps Script
+  const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...data }) });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error);
+  return j.data;
+}
+
+async function loadConfig() {
+  try { cfg = await api('config', { deviceId }); LS.set('cfg', cfg); } catch (e) {}
+  return cfg;
+}
+
+/* ---------- ניווט בין מסכים ---------- */
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+  if (id === 'scr-scan') startCam(); else stopCam();
+}
+
+function route() {
+  if (!deviceId) return show('scr-register');
+  if (!cfg) { show('scr-employee'); $('empMsg').textContent = 'אין חיבור לשרת. נדרשת קליטה בהפעלה הראשונה.'; return; }
+  if (needEmployee()) return showEmployees();
+  show('scr-scan');
+  updateHeader();
+}
+
+/* ---------- משמרות ועובד ---------- */
+function shiftKey(d = new Date()) {
+  const sh = (cfg && cfg.shifts) || [];
+  const min = d.getHours() * 60 + d.getMinutes();
+  for (const s of sh) {
+    if (s.start < s.end) { if (min >= s.start && min < s.end) return ymd(d) + ' ' + s.name; }
+    else {
+      if (min >= s.start) return ymd(d) + ' ' + s.name;
+      if (min < s.end) { const y = new Date(d); y.setDate(y.getDate() - 1); return ymd(y) + ' ' + s.name; }
+    }
+  }
+  return ymd(d);
+}
+// בכל החלפת משמרת המערכת מבקשת לבחור עובד מחדש
+const needEmployee = () => !emp || emp.shift !== shiftKey();
+
+function showEmployees() {
+  const list = $('empList');
+  list.innerHTML = '';
+  const teams = {};
+  (cfg.employees || []).forEach(e => (teams[e.team || 'כללי'] = teams[e.team || 'כללי'] || []).push(e));
+  Object.keys(teams).forEach(t => {
+    const h = document.createElement('div'); h.className = 'team'; h.textContent = 'צוות ' + t;
+    h.style.background = teamClr(t); list.appendChild(h);
+    teams[t].forEach(e => {
+      const b = document.createElement('button'); b.className = 'emp'; b.textContent = e.name;
+      b.style.setProperty('--tc', teamClr(e.team));
+      b.onclick = () => { unlockAudio(); emp = { name: e.name, team: e.team, shift: shiftKey() }; LS.set('emp', emp); route(); };
+      list.appendChild(b);
+    });
+  });
+  $('empMsg').textContent = (cfg.employees || []).length ? '' : 'לא הוגדרו עובדים בלשונית "עובדים".';
+  show('scr-employee');
+}
+
+function updateHeader() {
+  $('who').textContent = emp ? emp.name + (emp.team ? ' · ' + emp.team : '') : 'סורק סיורים';
+  document.querySelector('header').style.setProperty('--tc', emp ? teamClr(emp.team) : '#1e293b');
+  const on = navigator.onLine;
+  $('net').innerHTML = '<span class="dot" style="background:' + (on ? '#22c55e' : '#f59e0b') + '"></span>' +
+    (on ? 'מחובר' : 'ללא קליטה') + (queue.length ? ' · ' + queue.length + ' ממתינות לשליחה' : '');
+}
+
+/* ---------- מצלמה וסריקה ---------- */
+let qr = null, camOn = false, busy = false;
+
+async function startCam() {
+  if (camOn) return;
+  try {
+    qr = qr || new Html5Qrcode('reader', { formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE], verbose: false });
+    await qr.start({ facingMode: 'environment' },
+      { fps: 12, qrbox: (w, h) => { const s = Math.floor(Math.min(w, h) * 0.7); return { width: s, height: s }; } },
+      onCode, () => {});
+    camOn = true;
+    $('hint').textContent = 'כוון את המצלמה אל הברקוד';
+  } catch (e) {
+    $('hint').textContent = 'לא ניתן לפתוח מצלמה. אשר הרשאת מצלמה ורענן את הדף.';
+  }
+}
+async function stopCam() { if (qr && camOn) { try { await qr.stop(); } catch (e) {} camOn = false; } }
+
+function onCode(text) {
+  if (busy) return;
+  busy = true; setTimeout(() => busy = false, 2600);
+
+  if (needEmployee()) { showEmployees(); return; }
+
+  const m = String(text).trim().match(/^PT:(.+)$/);
+  const p = m && cfg.points.find(x => x.id === m[1]);
+  if (!p) { feedback('err', '✕', 'ברקוד לא מוכר', 'הברקוד לא שייך למערכת הסיורים'); return; }
+
+  const last = lastByPoint[p.id];
+  if (last && Date.now() - last < 60000) {
+    feedback('warn', '!', 'כבר נסרק', p.name + ' · לפני ' + Math.round((Date.now() - last) / 1000) + ' שניות');
+    return;
+  }
+
+  const now = new Date();
+  const scan = { id: uuid(), pointId: p.id, ts: now.toISOString(), employee: emp.name };
+  queue.push(scan); LS.set('queue', queue);
+  lastByPoint[p.id] = Date.now(); LS.set('lastByPoint', lastByPoint);
+
+  feedback('ok', '✓', 'נסרק בהצלחה', p.name + ' · ' + hm(now),
+    navigator.onLine ? 'שולח…' : 'נשמר בטלפון, יישלח כשתחזור קליטה', p);
+  sync(scan.id);
+}
+
+/* ---------- סנכרון (כולל מצב ללא קליטה) ---------- */
+let syncing = false;
+const STATUS_TXT = { 'בזמן': '✓ בזמן', 'מחוץ לטווח': '✕ מחוץ לטווח', 'כפול': 'כבר בוצע, לא נספר שוב' };
+
+async function sync(watchId) {
+  if (syncing || !queue.length || !deviceId) { updateHeader(); return; }
+  syncing = true;
+  let more = false;
+  try {
+    const batch = queue.slice(0, 50);
+    const res = await api('scan', { deviceId, deviceNow: new Date().toISOString(), scans: batch });
+    const done = new Set(res.results.map(r => r.id));
+    queue = queue.filter(s => !done.has(s.id)); LS.set('queue', queue);
+    const mine = watchId && res.results.find(r => r.id === watchId);
+    if (mine) {
+      setOvStatus(mine.ok ? (STATUS_TXT[mine.status] || mine.status) + (mine.note ? ' · ' + mine.note : '') : mine.error);
+      // סריקה מחוץ לטווח: המסך הופך לכתום כדי שהעובד יבין שהיא לא נספרה
+      if (mine.ok && mine.status !== 'בזמן' && $('overlay').classList.contains('show')) { $('overlay').className = 'show warn'; beep('warn'); }
+    }
+    more = queue.length > 0;
+  } catch (e) {
+    if (watchId) setOvStatus('נשמר בטלפון, יישלח אוטומטית');
+  } finally {
+    syncing = false; updateHeader();
+    if (more) setTimeout(sync, 500);
+  }
+}
+
+/* ---------- חיווי ויזואלי, קולי ורטט ---------- */
+let audioCtx = null, ovTimer = null;
+function unlockAudio() { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch (e) {} }
+function beep(kind) {
+  if (!audioCtx) return;
+  const seq = kind === 'ok' ? [[880, 0, .12], [1320, .15, .18]] : kind === 'warn' ? [[600, 0, .25]] : [[220, 0, .5]];
+  seq.forEach(([f, t, d]) => {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.frequency.value = f; o.type = 'square'; g.gain.value = .15;
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(audioCtx.currentTime + t); o.stop(audioCtx.currentTime + t + d);
+  });
+}
+function feedback(kind, icon, title, sub, status = '', point = null) {
+  const ov = $('overlay');
+  ov.className = 'show ' + kind;
+  $('ovIcon').textContent = icon; $('ovTitle').textContent = title;
+  $('ovSub').textContent = sub; $('ovStatus').textContent = status;
+  $('ovChips').innerHTML = point ? [[point.team, teamClr(point.team)], [point.site, siteClr(point.site)]]
+    .filter(c => c[0]).map(c => '<span style="color:' + c[1] + '">' + c[0].replace(/[<>&]/g, '') + '</span>').join('') : '';
+  beep(kind);
+  if (navigator.vibrate) navigator.vibrate(kind === 'ok' ? 120 : [200, 100, 200]);
+  clearTimeout(ovTimer);
+  ovTimer = setTimeout(() => ov.className = '', 2500);
+}
+const setOvStatus = (t) => { if ($('overlay').classList.contains('show')) $('ovStatus').textContent = t; };
+
+/* ---------- אירועים ---------- */
+$('btnReg').onclick = async () => {
+  unlockAudio();
+  $('regMsg').textContent = 'מאשר…';
+  try {
+    const r = await api('registerDevice', { password: $('regPw').value, name: $('regName').value });
+    deviceId = r.deviceId; LS.set('deviceId', deviceId);
+    $('regPw').value = '';
+    await loadConfig();
+    route();
+  } catch (e) { $('regMsg').textContent = e.message; }
+};
+$('btnSwitch').onclick = () => { emp = null; LS.set('emp', null); showEmployees(); };
+$('overlay').onclick = () => $('overlay').className = '';
+document.body.addEventListener('click', unlockAudio, { once: true });
+
+window.addEventListener('online', () => { updateHeader(); sync(); loadConfig(); });
+window.addEventListener('offline', updateHeader);
+setInterval(sync, 20000);                                     // ניסיון שליחה חוזר
+setInterval(() => { if (navigator.onLine) loadConfig(); }, 10 * 60000); // רענון נקודות/עובדים
+setInterval(() => { if (deviceId && cfg && needEmployee() && $('scr-scan').classList.contains('on')) showEmployees(); }, 60000);
+
+// השארת המסך דלוק בזמן סיור
+async function keepAwake() { try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch (e) {} }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { keepAwake(); sync(); } });
+
+/* ---------- הפעלה ---------- */
+(async function boot() {
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  if (typeof API_URL === 'undefined' || API_URL.indexOf('http') !== 0) {
+    document.body.innerHTML = '<p style="padding:20px">חסרה כתובת שרת בקובץ config.js</p>'; return;
+  }
+  keepAwake();
+  updateHeader();
+  if (deviceId) { if (!cfg) await loadConfig(); else loadConfig().then(() => { if (cfg && !cfg.deviceOk) console.warn('מכשיר לא מאושר'); }); }
+  route();
+  sync();
+})();
+</script>
+</body>
+</html>
