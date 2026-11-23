@@ -66,6 +66,20 @@
   #modal h3 { margin:0 0 10px; font-size:17px; }
   #modal .acts { display:flex; gap:10px; justify-content:flex-end; margin-top:14px; }
   .mlist div { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); }
+  /* ===== טופס תזמון בקוביות ===== */
+  .sched { margin-top:14px; border:1px solid var(--line); border-radius:12px; padding:14px; background:#fbfcfe; }
+  .sched > label, .sched .lab { display:block; font-size:13px; color:var(--mut); margin:12px 0 6px; }
+  .modes { display:flex; gap:10px; flex-wrap:wrap; }
+  .mode { flex:1; min-width:150px; border:1px solid #c9d2df; background:#fff; border-radius:12px; padding:12px; font:inherit; font-size:15px; font-weight:600; cursor:pointer; color:var(--fg); }
+  .mode.on { border:2px solid #2563eb; background:#eff5ff; color:#1d4ed8; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .cb { border:1px solid #c9d2df; background:#fff; border-radius:8px; padding:7px 10px; min-width:44px; font:inherit; font-size:14px; cursor:pointer; color:var(--fg); }
+  .cb.on { background:#2563eb; border-color:#2563eb; color:#fff; font-weight:700; }
+  .cb.q { background:#eef2f8; }
+  .hours .cb { min-width:48px; }
+  .schedSum { margin-top:14px; background:var(--ok); color:var(--okT); border-radius:8px; padding:10px 12px; font-size:15px; }
+  .schedSum.bad { background:var(--warn); color:var(--warnT); }
+  fieldset[disabled] .cb, fieldset[disabled] .mode { cursor:default; }
   /* ===== תווית ברקוד (לרוחב, כמו המדבקות הקיימות) ===== */
   #printArea { display:flex; flex-wrap:wrap; gap:6mm; justify-content:center; }
   .lbl { --k:1; width:calc(90mm*var(--k)); height:calc(70mm*var(--k)); border:calc(1.6mm*var(--k)) solid var(--tc); border-radius:calc(2.5mm*var(--k));
@@ -157,20 +171,29 @@
         <div><label>קומה</label><input id="f_floor" placeholder="2"></div>
         <div><label>תיאור</label><input id="f_desc"></div>
         <div><label>צוות</label><input id="f_team" list="teams" placeholder="חשמל / ניקיון"><datalist id="teams"></datalist></div>
-        <div><label>סוג כלל</label><select id="f_rule"></select></div>
       </div>
-      <p class="mut" id="ruleHelp" style="margin:12px 0"></p>
-      <div class="grid">
-        <div data-for="שעות קבועות"><label>שעות (מופרדות בפסיק)</label><input id="f_times" placeholder="08:00,12:00,16:00"></div>
-        <div data-for="מרווח"><label>כל כמה שעות</label><input id="f_every" type="number" step="0.5" min="0.5" placeholder="2"></div>
-        <div data-for="מרווח כמות בחלון"><label>שעת התחלה</label><input id="f_start" type="time"></div>
-        <div data-for="מרווח כמות בחלון"><label>שעת סיום</label><input id="f_end" type="time"></div>
-        <div data-for="כמות בחלון משמרת"><label>כמות סריקות נדרשת</label><input id="f_count" type="number" min="1" placeholder="1"></div>
-        <div data-for="משמרת"><label>משמרות (ריק = כולן)</label><input id="f_shifts" placeholder="בוקר,ערב,לילה"></div>
-        <div data-for="שעות קבועות מרווח"><label>טולרנס ± דקות (ריק = ברירת מחדל)</label><input id="f_tol" type="number" min="0"></div>
-        <div><label>מרווח מינימלי בין סריקות (דק')</label><input id="f_gap" type="number" min="0" placeholder="ללא"></div>
+      <div class="sched">
+        <label style="margin-top:0">מתי צריך לסרוק?</label>
+        <div class="modes">
+          <button type="button" class="mode" data-mode="shift">👥 בכל משמרת</button>
+          <button type="button" class="mode" data-mode="times">🕒 בשעות קבועות</button>
+        </div>
+        <div class="printTip hide" id="legacyNote"></div>
+        <div id="secShift" class="hide">
+          <span class="lab">כמה פעמים בכל משמרת?</span><div class="chips" id="cCount"></div>
+          <span class="lab">באילו משמרות?</span><div class="chips" id="cShifts"></div>
+        </div>
+        <div id="secTimes" class="hide">
+          <span class="lab">מילוי מהיר: סמן שעת התחלה ושעת סיום, ואז בחר כל כמה שעות</span><div class="chips" id="cQuick"></div>
+          <span class="lab">שעות (לחיצה מסמנת או מבטלת)</span><div class="chips hours" id="cHours"></div>
+        </div>
+        <span class="lab">באילו ימים?</span><div class="chips" id="cDays"></div>
+        <div class="schedSum" id="schedSum"></div>
+        <details class="tr"><summary>מתקדם</summary>
+          <div class="grid"><div><label>מרווח מינימלי בין שתי סריקות של הנקודה (דק')</label><input id="f_gap" type="number" min="0" placeholder="ללא"></div></div>
+          <p class="mut">סריקה חוזרת לפני שעבר המרווח מסומנת "כפול" ולא נספרת. הטולרנס (כמה דקות לפני ואחרי השעה מותר לסרוק) אחיד לכל המערכת: לשונית "הגדרות" בגיליון.</p>
+        </details>
       </div>
-      <div style="margin-top:12px"><label>ימים</label><div class="days" id="f_days"></div></div>
       <div class="grid" style="margin-top:12px">
         <div><label>פעיל מתאריך (מאז נספרות החמצות)</label><input id="f_from" type="date"></div>
         <div style="align-self:end"><label style="display:inline-flex;align-items:center;color:var(--fg)"><input type="checkbox" class="chk" id="f_active" checked>פעיל</label></div>
@@ -378,19 +401,19 @@ async function loadData() {
   $('sitesList').innerHTML = (data.editSites || []).map(x => '<option value="' + esc(x) + '">').join('');
   if (!$('nameFields').children.length) $('nameFields').innerHTML = Object.keys(NAME_COLS).map(k =>
     '<div><label>' + esc(LANG_HE[k] || k) + '</label><input id="f_n_' + k + '" dir="' + (k === 'ar' ? 'rtl' : 'ltr') + '"></div>').join('');
-  $('f_rule').innerHTML = data.rules.map(r => '<option>' + esc(r) + '</option>').join('');
+  buildSchedChips();
   $('teams').innerHTML = [...new Set(data.employees.map(e => e['צוות']).concat(data.points.map(p => p['צוות'])))]
     .filter(Boolean).map(t => '<option value="' + esc(t) + '">').join('');
-  $('f_days').innerHTML = DAYS.map(d => '<label><input type="checkbox" class="chk" value="' + d + '" checked>' + d + "'</label>").join('');
+
   renderPoints();
   renderColors();
-  ruleChanged();
+  renderSched();
   $('faultBadge').textContent = data.openFaults || '';
 }
 
 function ruleText(p) {
   const r = p['סוג כלל'];
-  if (r === 'שעות קבועות') return 'בשעות ' + p['שעות קבועות'] + (p["טולרנס (דק')"] ? ' ±' + p["טולרנס (דק')"] : '');
+  if (r === 'שעות קבועות') return 'בשעות ' + String(p['שעות קבועות']).split(',').map(h => h.replace(':00', '')).join(', ');
   if (r === 'מרווח') return 'כל ' + p['כל X שעות'] + " ש' " + p['התחלה'] + '–' + p['סיום'];
   if (r === 'כמות בחלון') return p['כמות נדרשת'] + ' פעמים ' + p['התחלה'] + '–' + p['סיום'];
   if (r === 'משמרת') return (p['כמות נדרשת'] || 1) + ' בכל משמרת' + (p['משמרות'] ? ' (' + p['משמרות'] + ')' : '');
@@ -435,32 +458,140 @@ function renderPoints() {
   document.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => editPoint(b.dataset.edit));
 }
 
-/* ---------- טופס נקודה ---------- */
-function ruleChanged() {
-  const r = $('f_rule').value;
-  // אילו שדות רלוונטיים לכל סוג כלל
-  const map = {
-    'שעות קבועות': ['f_times', 'f_tol'], 'מרווח': ['f_every', 'f_start', 'f_end', 'f_tol'],
-    'כמות בחלון': ['f_start', 'f_end', 'f_count'], 'משמרת': ['f_count', 'f_shifts']
-  };
-  ['f_times', 'f_every', 'f_start', 'f_end', 'f_count', 'f_shifts', 'f_tol'].forEach(id =>
-    $(id).parentElement.classList.toggle('hide', (map[r] || []).indexOf(id) < 0));
-  $('ruleHelp').textContent = RULE_HELP[r] || '';
+/* ---------- טופס נקודה: תזמון בקוביות ---------- */
+/*
+ * שני מצבים בלבד:
+ *   shift = X סריקות בכל משמרת  → נשמר כסוג כלל "משמרת"
+ *   times = שעות עגולות קבועות   → נשמר כסוג כלל "שעות קבועות" (הטולרנס אחיד לכל המערכת)
+ * נקודה ישנה מסוג "מרווח" מומרת אוטומטית לשעות. "כמות בחלון" נשמרת כמו שהיא עד שבוחרים מצב.
+ */
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ':00');
+let sched = null;
+const newSched = () => ({ mode: '', count: 1, shifts: new Set(), hours: new Set(), days: new Set(DAYS), legacy: null, converted: '' });
+const shiftNames = () => (data.shifts || []).map(x => x['שם']).filter(Boolean);
+
+function buildSchedChips() {
+  $('cCount').innerHTML = [1, 2, 3, 4].map(n => '<button type="button" class="cb" data-count="' + n + '">' + n + '</button>').join('');
+  $('cShifts').innerHTML = (data.shifts || []).map(x => '<button type="button" class="cb" data-shift="' + esc(x['שם']) + '">' +
+    esc(x['שם']) + ' <span dir="ltr">' + esc(String(x['התחלה']).slice(0, 5)) + '–' + esc(String(x['סיום']).slice(0, 5)) + '</span></button>').join('');
+  $('cQuick').innerHTML = [['1', 'כל שעה'], ['2', 'כל 2 שעות'], ['3', 'כל 3'], ['4', 'כל 4'], ['0', 'נקה']]
+    .map(q => '<button type="button" class="cb q" data-q="' + q[0] + '">' + q[1] + '</button>').join('');
+  $('cDays').innerHTML = DAYS.map(d => '<button type="button" class="cb" data-day="' + d + '">' + d + "'</button>").join('');
+  if (!sched) sched = newSched();
 }
-$('f_rule').onchange = ruleChanged;
+function renderSched() {
+  if (!sched) return;
+  const m = sched.mode;
+  document.querySelectorAll('.mode').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+  $('secShift').classList.toggle('hide', m !== 'shift');
+  $('secTimes').classList.toggle('hide', m !== 'times');
+  // שעות: 24 שעות עגולות + שעות לא עגולות שהיו בנקודה (כדי לא לאבד אותן)
+  const extra = [...sched.hours].filter(h => HOURS.indexOf(h) < 0).sort();
+  $('cHours').innerHTML = HOURS.concat(extra).map(h => '<button type="button" class="cb' + (sched.hours.has(h) ? ' on' : '') + '" data-hour="' + h + '">' +
+    (h.endsWith(':00') ? h.slice(0, 2) : h) + '</button>').join('');
+  document.querySelectorAll('[data-count]').forEach(b => b.classList.toggle('on', +b.dataset.count === sched.count));
+  document.querySelectorAll('[data-shift]').forEach(b => b.classList.toggle('on', sched.shifts.has(b.dataset.shift)));
+  document.querySelectorAll('[data-day]').forEach(b => b.classList.toggle('on', sched.days.has(b.dataset.day)));
+  const ln = $('legacyNote');
+  if (m === '' && sched.legacy) { ln.textContent = 'הנקודה מוגדרת בשיטה הישנה: ' + sched.legacy.text + '. היא ממשיכה לעבוד כמו שהיא. כדי לעבור לשיטה החדשה, בחר "בכל משמרת" או "בשעות קבועות".'; ln.classList.remove('hide'); }
+  else if (sched.converted) { ln.textContent = sched.converted; ln.classList.remove('hide'); }
+  else ln.classList.add('hide');
+  const s = schedSummary();
+  $('schedSum').textContent = s.text; $('schedSum').classList.toggle('bad', !s.ok);
+}
+function daysText() {
+  const d = DAYS.filter(x => sched.days.has(x));
+  if (d.length === 7) return 'כל יום';
+  if (!d.length) return 'בלי ימים';
+  const idx = d.map(x => DAYS.indexOf(x));
+  const run = idx.every((v, i) => !i || v === idx[i - 1] + 1);
+  return 'בימים ' + (run && d.length > 2 ? d[0] + "'–" + d[d.length - 1] + "'" : d.map(x => x + "'").join(', '));
+}
+function schedSummary() {
+  if (!sched.days.size) return { ok: false, text: '⚠ בחר לפחות יום אחד' };
+  if (sched.mode === 'shift') {
+    const all = sched.shifts.size === 0 || sched.shifts.size === shiftNames().length;
+    if (!sched.shifts.size) return { ok: false, text: '⚠ בחר לפחות משמרת אחת' };
+    return { ok: true, text: '✓ צריך לסרוק ' + (sched.count === 1 ? 'פעם אחת' : sched.count + ' פעמים') + ' בכל משמרת (' +
+      (all ? 'כל המשמרות' : shiftNames().filter(x => sched.shifts.has(x)).join(', ')) + '), ' + daysText() + '.' };
+  }
+  if (sched.mode === 'times') {
+    const h = [...sched.hours].sort();
+    if (!h.length) return { ok: false, text: '⚠ בחר את השעות שבהן צריך לסרוק' };
+    return { ok: true, text: '✓ צריך לסרוק ' + (h.length === 1 ? 'פעם אחת' : h.length + ' פעמים') + ' ביום: ' +
+      h.map(x => x.endsWith(':00') ? x.slice(0, 2) : x).join(', ') + ' (±' + (data.tol || 15) + " דק'), " + daysText() + '.' };
+  }
+  if (sched.legacy) return { ok: true, text: '✓ ' + sched.legacy.text + ', ' + daysText() + '.' };
+  return { ok: false, text: '⚠ בחר מתי צריך לסרוק: "בכל משמרת" או "בשעות קבועות"' };
+}
+// לחיצות על הקוביות
+document.querySelector('.sched').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b || $('pointFs').disabled) return;
+  if (b.dataset.mode) {
+    sched.mode = b.dataset.mode; sched.converted = '';
+    if (sched.mode === 'shift' && !sched.shifts.size) shiftNames().forEach(x => sched.shifts.add(x));
+  }
+  else if (b.dataset.count) sched.count = +b.dataset.count;
+  else if (b.dataset.shift) sched.shifts.has(b.dataset.shift) ? sched.shifts.delete(b.dataset.shift) : sched.shifts.add(b.dataset.shift);
+  else if (b.dataset.day) sched.days.has(b.dataset.day) ? sched.days.delete(b.dataset.day) : sched.days.add(b.dataset.day);
+  else if (b.dataset.hour) sched.hours.has(b.dataset.hour) ? sched.hours.delete(b.dataset.hour) : sched.hours.add(b.dataset.hour);
+  else if (b.dataset.q !== undefined) {
+    const step = +b.dataset.q;
+    if (!step) sched.hours.clear();
+    else {
+      const sel = [...sched.hours].map(h => parseInt(h)).sort((x, y) => x - y);
+      const from = sel.length >= 2 ? sel[0] : 7, to = sel.length >= 2 ? sel[sel.length - 1] : 19;
+      sched.hours.clear();
+      for (let h = from; h <= to; h += step) sched.hours.add(String(h).padStart(2, '0') + ':00');
+    }
+  }
+  else return;
+  renderSched();
+});
+// חשמל: הצעה אוטומטית "פעם אחת בכל משמרת" (רק לנקודה חדשה שעוד לא נבחר לה תזמון)
+$('f_team').addEventListener('change', () => {
+  if (!editingId && !sched.mode && $('f_team').value.trim() === 'חשמל') {
+    sched.mode = 'shift'; sched.count = 1; shiftNames().forEach(x => sched.shifts.add(x)); renderSched();
+  }
+});
+
+/** טעינת התזמון של נקודה קיימת לתוך הקוביות */
+function schedFromPoint(p) {
+  const sc = newSched();
+  const days = String(p['ימים'] || '').split(/[,\s]+/).filter(Boolean);
+  if (days.length) sc.days = new Set(days);
+  const rule = p['סוג כלל'];
+  if (rule === 'משמרת') {
+    sc.mode = 'shift'; sc.count = Math.max(1, Math.min(4, parseInt(p['כמות נדרשת']) || 1));
+    const sh = String(p['משמרות'] || '').split(/[,;]+/).map(x => x.trim()).filter(Boolean);
+    (sh.length ? sh : shiftNames()).forEach(x => sc.shifts.add(x));
+  } else if (rule === 'שעות קבועות') {
+    sc.mode = 'times';
+    String(p['שעות קבועות'] || '').split(/[,;\s]+/).map(toTimeInput).filter(Boolean).forEach(h => sc.hours.add(h));
+  } else if (rule === 'מרווח') {      // המרה אוטומטית: "כל X שעות" → השעות עצמן
+    sc.mode = 'times';
+    const st = parseInt(toTimeInput(p['התחלה']) || '0'), en = p['סיום'] ? parseInt(toTimeInput(p['סיום'])) : 23, every = parseFloat(p['כל X שעות']) || 1;
+    for (let h = st; h <= en; h += Math.max(1, Math.round(every))) sc.hours.add(String(h).padStart(2, '0') + ':00');
+    sc.converted = 'הנקודה הייתה מוגדרת "כל ' + every + ' שעות". הומרה לשעות קבועות. בדוק ולחץ "שמור נקודה".';
+  } else if (rule === 'כמות בחלון') {
+    sc.legacy = { rule: rule, start: p['התחלה'], end: p['סיום'], count: p['כמות נדרשת'],
+      text: (p['כמות נדרשת'] || 1) + ' פעמים בין ' + toTimeInput(p['התחלה']) + ' ל-' + toTimeInput(p['סיום']) };
+  }
+  return sc;
+}
 
 function clearForm() {
   editingId = '';
-  ['f_name', 'f_num', 'f_site', 'f_floor', 'f_desc', 'f_team', 'f_times', 'f_every', 'f_start', 'f_end', 'f_count', 'f_shifts', 'f_tol', 'f_gap']
+  ['f_name', 'f_num', 'f_site', 'f_floor', 'f_desc', 'f_team', 'f_gap']
     .concat(Object.keys(NAME_COLS).map(k => 'f_n_' + k)).forEach(id => { if ($(id)) $(id).value = ''; });
   $('f_site').value = (!me().isSuper && (me().sites || [])[0]) || '';
   setReadOnly(false);
   $('f_from').value = (data && data.today) || '';
   $('f_active').checked = true;
-  $('f_days').querySelectorAll('input').forEach(c => c.checked = true);
+  sched = newSched();
   $('formTitle').textContent = 'נקודה חדשה';
   $('saveMsg').textContent = '';
-  ruleChanged();
+  renderSched();
 }
 $('btnNew').onclick = clearForm;
 
@@ -480,47 +611,41 @@ function editPoint(id) {
   editingId = id;
   $('f_name').value = p['שם נקודה']; $('f_site').value = p['קוד אתר']; $('f_desc').value = p['תיאור'];
   $('f_num').value = p['מספר'] || ''; $('f_floor').value = p['קומה'] || '';
-  $('f_team').value = p['צוות']; $('f_rule').value = p['סוג כלל'];
-  $('f_times').value = p['שעות קבועות']; $('f_every').value = p['כל X שעות'];
-  $('f_start').value = toTimeInput(p['התחלה']); $('f_end').value = toTimeInput(p['סיום']);
-  $('f_count').value = p['כמות נדרשת']; $('f_shifts').value = p['משמרות'];
-  $('f_tol').value = p["טולרנס (דק')"]; $('f_gap').value = p["מרווח מינימלי (דק')"];
-  const days = String(p['ימים'] || '').split(/[,\s]+/).filter(Boolean);
-  $('f_days').querySelectorAll('input').forEach(c => c.checked = !days.length || days.indexOf(c.value) >= 0);
+  $('f_team').value = p['צוות'];
+  $('f_gap').value = p["מרווח מינימלי (דק')"];
   $('f_active').checked = isOn(p['פעיל']);
   $('f_from').value = toDateInput(p['פעיל מתאריך']);
   Object.keys(NAME_COLS).forEach(k => $('f_n_' + k).value = p[NAME_COLS[k]] || '');
+  sched = schedFromPoint(p);
   $('formTitle').textContent = (p._canEdit ? 'עריכת נקודה ' : 'צפייה בנקודה ') + (p['מספר'] || '') + ' · ' + p['שם נקודה'];
   setReadOnly(!p._canEdit);
-  ruleChanged();
+  renderSched();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 $('btnSave').onclick = async () => {
-  const rule = $('f_rule').value;
-  const days = [...$('f_days').querySelectorAll('input:checked')].map(c => c.value);
+  const sum = schedSummary();
+  const days = DAYS.filter(x => sched.days.has(x));
   const pt = {
     'PointID': editingId, 'שם נקודה': $('f_name').value.trim(), 'קוד אתר': $('f_site').value.trim(),
     'מספר': $('f_num').value.trim(), 'קומה': $('f_floor').value.trim(),
-    'תיאור': $('f_desc').value.trim(), 'צוות': $('f_team').value.trim(), 'סוג כלל': rule,
-    'שעות קבועות': rule === 'שעות קבועות' ? $('f_times').value.replace(/\s/g, '') : '',
-    'כל X שעות': rule === 'מרווח' ? $('f_every').value : '',
-    'התחלה': ['מרווח', 'כמות בחלון'].includes(rule) ? $('f_start').value : '',
-    'סיום': ['מרווח', 'כמות בחלון'].includes(rule) ? $('f_end').value : '',
-    'כמות נדרשת': ['כמות בחלון', 'משמרת'].includes(rule) ? ($('f_count').value || '1') : '',
-    'משמרות': rule === 'משמרת' ? $('f_shifts').value.replace(/\s/g, '') : '',
+    'תיאור': $('f_desc').value.trim(), 'צוות': $('f_team').value.trim(),
     'ימים': days.length === 7 ? '' : days.join(','),
-    "טולרנס (דק')": ['שעות קבועות', 'מרווח'].includes(rule) ? $('f_tol').value : '',
     "מרווח מינימלי (דק')": $('f_gap').value, 'פעיל': $('f_active').checked,
-    'פעיל מתאריך': $('f_from').value
+    'פעיל מתאריך': $('f_from').value,
+    'שעות קבועות': '', 'כל X שעות': '', 'התחלה': '', 'סיום': '', 'כמות נדרשת': '', 'משמרות': '', "טולרנס (דק')": ''
   };
+  if (sched.mode === 'shift') {
+    const all = sched.shifts.size === shiftNames().length;
+    Object.assign(pt, { 'סוג כלל': 'משמרת', 'כמות נדרשת': String(sched.count),
+      'משמרות': all ? '' : shiftNames().filter(x => sched.shifts.has(x)).join(',') });
+  } else if (sched.mode === 'times') {
+    Object.assign(pt, { 'סוג כלל': 'שעות קבועות', 'שעות קבועות': [...sched.hours].sort().join(',') });
+  } else if (sched.legacy) {
+    Object.assign(pt, { 'סוג כלל': sched.legacy.rule, 'התחלה': sched.legacy.start, 'סיום': sched.legacy.end, 'כמות נדרשת': sched.legacy.count });
+  }
   Object.keys(NAME_COLS).forEach(k => pt[NAME_COLS[k]] = $('f_n_' + k).value.trim());
-  // בדיקות בסיסיות
-  const err = !pt['שם נקודה'] ? 'חסר שם נקודה' : !pt['קוד אתר'] ? 'חסר אתר'
-    : rule === 'שעות קבועות' && !/^\d{1,2}:\d{2}(,\d{1,2}:\d{2})*$/.test(pt['שעות קבועות']) ? 'פורמט שעות: 08:00,12:00'
-    : rule === 'מרווח' && (!pt['כל X שעות'] || !pt['התחלה']) ? 'חסר מרווח או שעת התחלה'
-    : rule === 'כמות בחלון' && (!pt['התחלה'] || !pt['סיום'] || pt['סיום'] <= pt['התחלה']) ? 'חלון זמן לא תקין (הסיום חייב להיות אחרי ההתחלה)'
-    : !days.length ? 'בחר לפחות יום אחד' : '';
+  const err = !pt['שם נקודה'] ? 'חסר שם נקודה' : !pt['קוד אתר'] ? 'חסר אתר' : !sum.ok ? sum.text.replace('⚠ ', '') : '';
   if (err) { $('saveMsg').textContent = err; return; }
   $('saveMsg').textContent = 'שומר…';
   try {
