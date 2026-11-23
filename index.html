@@ -8,58 +8,95 @@
 <link rel="icon" href="icon.svg">
 <title>סורק סיורים</title>
 <script src="config.js"></script>
+<script src="i18n.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
   :root { --bg:#0f172a; --card:#1e293b; --fg:#f1f5f9; --mut:#94a3b8; --ok:#16a34a; --warn:#d97706; --err:#dc2626; --acc:#3b82f6; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body { margin:0; height:100%; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif; overscroll-behavior:none; }
-  header { border-bottom:5px solid var(--tc,#1e293b); }
-  header { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#020617; font-size:15px; min-height:46px; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI","Noto Sans Ethiopic","Nyala",Arial,sans-serif; overscroll-behavior:none; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 14px; background:#020617; font-size:15px; min-height:46px; border-bottom:5px solid var(--tc,#1e293b); }
   #who { font-weight:600; }
-  #net { font-size:13px; color:var(--mut); }
+  #net { font-size:13px; color:var(--mut); text-align:end; }
   #net .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-inline-end:5px; vertical-align:middle; }
   .screen { display:none; padding:18px; }
   .screen.on { display:block; }
   h2 { margin:6px 0 16px; font-size:22px; }
-  input,button { font:inherit; }
-  input { width:100%; padding:14px; border-radius:10px; border:1px solid #334155; background:var(--card); color:var(--fg); margin-bottom:12px; font-size:17px; }
+  input,button,select,textarea { font:inherit; }
+  input,select,textarea { width:100%; padding:14px; border-radius:10px; border:1px solid #334155; background:var(--card); color:var(--fg); margin-bottom:12px; font-size:17px; }
+  label.lbl { display:block; color:var(--mut); font-size:14px; margin:4px 0 6px; }
   .btn { width:100%; padding:16px; border:0; border-radius:12px; background:var(--acc); color:#fff; font-size:18px; font-weight:600; }
   .btn:active { opacity:.8; }
+  .btn.sec { background:#334155; }
   .msg { color:var(--mut); font-size:14px; margin-top:10px; min-height:20px; }
   .team { font-size:14px; font-weight:700; margin:18px 0 8px; padding:4px 10px; border-radius:8px; display:inline-block; color:#fff; }
-  .emp { border-inline-start:6px solid var(--tc,#334155) !important; }
-  .emp { display:block; width:100%; text-align:start; padding:18px; margin-bottom:10px; border-radius:12px; border:1px solid #334155; background:var(--card); color:var(--fg); font-size:19px; }
+  .emp { display:block; width:100%; text-align:start; padding:18px; margin-bottom:10px; border-radius:12px; border:1px solid #334155; border-inline-start:6px solid var(--tc,#334155); background:var(--card); color:var(--fg); font-size:19px; }
   #scr-scan { padding:0; }
   #reader { width:100%; background:#000; min-height:60vh; }
   #reader video { object-fit:cover; }
   #hint { text-align:center; padding:14px; color:var(--mut); font-size:16px; }
   #btnSwitch { display:block; margin:6px auto 20px; background:none; border:1px solid #334155; color:var(--mut); padding:10px 18px; border-radius:10px; font-size:14px; }
+  /* מסך תוצאה אחרי סריקה */
   #overlay { position:fixed; inset:0; display:none; flex-direction:column; justify-content:center; align-items:center; text-align:center; padding:24px; z-index:10; }
   #overlay.show { display:flex; }
   #overlay.ok { background:var(--ok); } #overlay.warn { background:var(--warn); } #overlay.err { background:var(--err); }
-  #ovIcon { font-size:96px; line-height:1; }
-  #ovTitle { font-size:30px; font-weight:700; margin-top:14px; }
-  #ovSub { font-size:24px; margin-top:10px; }
-  #ovStatus { font-size:18px; margin-top:18px; opacity:.95; min-height:24px; }
-  #ovChips { margin-top:14px; } #ovChips span { display:inline-block; margin:0 4px; padding:3px 12px; border-radius:20px; background:#fff; font-weight:700; font-size:15px; }
+  #ovIcon { font-size:90px; line-height:1; }
+  #ovTitle { font-size:28px; font-weight:700; margin-top:12px; }
+  #ovSub { font-size:23px; margin-top:8px; }
+  #ovStatus { font-size:17px; margin-top:14px; opacity:.95; min-height:22px; }
+  #ovChips { margin-top:12px; } #ovChips span { display:inline-block; margin:0 4px; padding:3px 12px; border-radius:20px; background:#fff; font-weight:700; font-size:15px; }
+  #ovActions { display:none; width:100%; max-width:420px; margin-top:26px; gap:12px; }
+  #ovActions.on { display:flex; }
+  #ovActions button { flex:1; border:3px solid #fff; border-radius:16px; padding:18px 8px; font-size:20px; font-weight:800; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  #ovActions button b { font-size:38px; line-height:1; }
+  #btnOk { background:#fff; color:var(--ok); }
+  #btnFault { background:#f59e0b; color:#1c1917; }
+  #ovBar { height:6px; background:rgba(255,255,255,.85); width:100%; max-width:420px; margin-top:14px; border-radius:3px; transform-origin:right; }
+  [dir=ltr] #ovBar { transform-origin:left; }
+  #ovBar.run { animation:shrink 4s linear forwards; }
+  @keyframes shrink { from { transform:scaleX(1) } to { transform:scaleX(0) } }
+  /* מסך תקלה */
+  #faultPoint { display:inline-block; padding:4px 12px; border-radius:20px; color:#fff; font-weight:700; margin-bottom:14px; }
+  #faultText { min-height:120px; resize:vertical; }
+  .photoBtn { display:flex; align-items:center; justify-content:center; gap:10px; padding:16px; border:2px dashed #475569; border-radius:12px; color:var(--fg); font-size:18px; margin-bottom:12px; }
+  .photoBtn input { display:none; }
+  #faultPreview { display:none; max-width:100%; max-height:240px; border-radius:10px; margin:0 auto 10px; }
+  #btnRemovePhoto { display:none; margin:0 auto 14px; background:none; border:0; color:#fca5a5; text-decoration:underline; }
+  .row2 { display:flex; gap:10px; } .row2 .btn { flex:1; }
 </style>
 </head>
 <body>
 <header><div id="who">סורק סיורים</div><div id="net"></div></header>
 
-<!-- אישור מכשיר (פעם אחת) -->
-<section id="scr-register" class="screen">
+<!-- אישור מכשיר (פעם אחת, על ידי המנהל – תמיד בעברית) -->
+<section id="scr-register" class="screen" dir="rtl">
   <h2>הפעלת טלפון סיורים</h2>
   <p class="msg" style="margin-top:0">הגדרה חד־פעמית על ידי מנהל המערכת.</p>
-  <input id="regName" placeholder="שם המכשיר (למשל: טלפון סיורים 1)">
-  <input id="regPw" type="password" placeholder="סיסמת מנהל">
+  <label class="lbl">שם המכשיר</label>
+  <input id="regName" placeholder="למשל: טלפון חשמל 1 / טלפון של דנה">
+  <label class="lbl">אתר</label>
+  <select id="regSite"></select>
+  <label class="lbl">צוות</label>
+  <select id="regTeam"></select>
+  <label class="lbl">עובד</label>
+  <select id="regEmp"></select>
+  <p class="msg" style="margin-top:-6px">טלפון משותף = כל עובד בוחר את שמו בתחילת משמרת. עובד קבוע = הטלפון נעול עליו.</p>
+  <label class="lbl">שם המשתמש שלך (מנהל)</label>
+  <input id="regUser" autocapitalize="off" autocomplete="username" dir="ltr">
+  <label class="lbl">הסיסמה שלך</label>
+  <input id="regPw" type="password" autocomplete="current-password">
   <button class="btn" id="btnReg">אשר מכשיר</button>
   <div class="msg" id="regMsg"></div>
 </section>
 
-<!-- בחירת עובד בתחילת משמרת -->
+<!-- מכשיר שבוטל -->
+<section id="scr-blocked" class="screen">
+  <h2 id="blockedMsg"></h2>
+  <button class="btn sec" id="btnReRegister">הפעלה מחדש (מנהל)</button>
+</section>
+
+<!-- בחירת עובד בתחילת משמרת (טלפון משותף) -->
 <section id="scr-employee" class="screen">
-  <h2>מי במשמרת?</h2>
+  <h2 id="empTitle"></h2>
   <div id="empList"></div>
   <div class="msg" id="empMsg"></div>
 </section>
@@ -67,28 +104,77 @@
 <!-- מסך סריקה -->
 <section id="scr-scan" class="screen">
   <div id="reader"></div>
-  <div id="hint">כוון את המצלמה אל הברקוד</div>
-  <button id="btnSwitch">החלף עובד</button>
+  <div id="hint"></div>
+  <button id="btnSwitch"></button>
 </section>
 
-<div id="overlay"><div id="ovIcon"></div><div id="ovTitle"></div><div id="ovSub"></div><div id="ovChips"></div><div id="ovStatus"></div></div>
+<!-- דיווח תקלה -->
+<section id="scr-fault" class="screen">
+  <h2 id="faultTitle"></h2>
+  <div id="faultPoint"></div>
+  <textarea id="faultText" dir="auto"></textarea>
+  <label class="photoBtn"><span>📷</span><span id="photoLbl"></span><input id="faultPhoto" type="file" accept="image/*" capture="environment"></label>
+  <img id="faultPreview" alt="">
+  <button id="btnRemovePhoto"></button>
+  <div class="row2"><button class="btn sec" id="btnFaultCancel"></button><button class="btn" id="btnFaultSend" style="background:#f59e0b;color:#1c1917"></button></div>
+  <div class="msg" id="faultMsg"></div>
+</section>
+
+<div id="overlay">
+  <div id="ovIcon"></div><div id="ovTitle"></div><div id="ovSub"></div><div id="ovChips"></div><div id="ovStatus"></div>
+  <div id="ovActions"><button id="btnOk"><b>✓</b><span></span></button><button id="btnFault"><b>⚠</b><span></span></button></div>
+  <div id="ovBar"></div>
+</div>
 
 <script>
 /* ---------- אחסון מקומי ---------- */
+const NS = window.LS_NS || '';
 const LS = {
-  get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v === null ? d : v; } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  get(k, d) { try { const v = JSON.parse(localStorage.getItem(NS + k)); return v === null ? d : v; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(NS + k, JSON.stringify(v)); return true; } catch (e) { return false; } }
 };
 let cfg = LS.get('cfg', null);
-let deviceId = LS.get('deviceId', null);
+let deviceId = LS.get('deviceId', null) || window.PRESET_DEVICE || null;
 let emp = LS.get('emp', null);
-let queue = LS.get('queue', []);          // סריקות שעוד לא נשלחו לשרת
+let queue = LS.get('queue', []);           // סריקות שעוד לא נשלחו
+let faultQueue = LS.get('faults', []);     // תקלות שעוד לא נשלחו
 let lastByPoint = LS.get('lastByPoint', {});
 
 const $ = (id) => document.getElementById(id);
 const pad = (n) => String(n).padStart(2, '0');
 const hm = (d) => pad(d.getHours()) + ':' + pad(d.getMinutes());
 const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const esc = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const uuid = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() :
+  'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2));
+
+/* ---------- שפה ---------- */
+// טלפון נעול על עובד = השפה שלו. טלפון משותף = השפה של מי שבחר את שמו.
+function lang() {
+  const l = (cfg && cfg.device && cfg.device.employee) ? cfg.device.lang : (emp && emp.lang) || 'he';
+  return I18N[l] ? l : 'he';
+}
+function t(key, n) { const s = (I18N[lang()][key] || I18N.he[key] || key); return n === undefined ? s : s.replace('{n}', n); }
+function applyLang() {
+  const l = lang();
+  document.documentElement.lang = l;
+  document.documentElement.dir = I18N[l].dir;
+  $('hint').textContent = t('scanHint');
+  $('btnSwitch').textContent = t('switchEmp');
+  $('empTitle').textContent = t('whoOnShift');
+  $('faultTitle').textContent = t('faultTitle');
+  $('faultText').placeholder = t('faultPlaceholder');
+  $('btnFaultCancel').textContent = t('cancel');
+  $('btnFaultSend').textContent = t('send');
+  $('btnRemovePhoto').textContent = t('removePhoto');
+  $('photoLbl').textContent = photoData ? t('retakePhoto') : t('addPhoto');
+  $('btnOk').querySelector('span').textContent = t('ok');
+  $('btnFault').querySelector('span').textContent = t('fault');
+  $('blockedMsg').textContent = t('deviceBlocked');
+}
+const pname = (p) => (p.num ? p.num + ' · ' : '') + ((p.names && p.names[lang()]) || p.name);
+
+/* ---------- צבעים ---------- */
 const PALETTE = ['#0891B2', '#DB2777', '#65A30D', '#EA580C', '#7C3AED', '#0D9488', '#B45309', '#4F46E5'];
 function colorOf(map, name) {   // זהה ל-colorOf_ בשרת
   map = map || {};
@@ -97,10 +183,8 @@ function colorOf(map, name) {   // זהה ל-colorOf_ בשרת
   let h = 0; for (const ch of String(name)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return PALETTE[h % PALETTE.length];
 }
-const teamClr = (t) => colorOf(cfg && cfg.colors && cfg.colors.teams, t);
-const siteClr = (s) => colorOf(cfg && cfg.colors && cfg.colors.sites, s);
-const uuid = () => (crypto.randomUUID ? crypto.randomUUID() :
-  'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2));
+const teamClr = (x) => colorOf(cfg && cfg.colors && cfg.colors.teams, x);
+const siteClr = (x) => colorOf(cfg && cfg.colors && cfg.colors.sites, x);
 
 /* ---------- תקשורת עם Apps Script ---------- */
 async function api(action, data = {}) {
@@ -112,23 +196,50 @@ async function api(action, data = {}) {
 }
 
 async function loadConfig() {
-  try { cfg = await api('config', { deviceId }); LS.set('cfg', cfg); } catch (e) {}
+  try { cfg = await api('config', { deviceId }); LS.set('cfg', cfg); } catch (e) { }
   return cfg;
 }
 
-/* ---------- ניווט בין מסכים ---------- */
+/* ---------- מצב המכשיר ---------- */
+const fixedEmp = () => cfg && cfg.device && cfg.device.employee;
+const devTeam = () => (cfg && cfg.device && cfg.device.team) || '';
+
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
   if (id === 'scr-scan') startCam(); else stopCam();
 }
 
 function route() {
-  if (!deviceId) return show('scr-register');
-  if (!cfg) { show('scr-employee'); $('empMsg').textContent = 'אין חיבור לשרת. נדרשת קליטה בהפעלה הראשונה.'; return; }
-  if (needEmployee()) return showEmployees();
+  if (!deviceId) return showRegister();
+  if (!cfg) { show('scr-employee'); $('empMsg').textContent = t('noServer'); return; }
+  if (cfg.deviceOk === false) { applyLang(); return show('scr-blocked'); }
+  if (fixedEmp()) {                                   // טלפון אישי: נעול על העובד
+    emp = { name: cfg.device.employee, team: cfg.device.team, lang: cfg.device.lang, shift: shiftKey() };
+    LS.set('emp', emp);
+  } else if (needEmployee()) { applyLang(); return showEmployees(); }
+  applyLang();
+  $('btnSwitch').style.display = fixedEmp() ? 'none' : '';
   show('scr-scan');
   updateHeader();
 }
+
+/* ---------- רישום מכשיר ---------- */
+async function showRegister() {
+  document.documentElement.dir = 'rtl';
+  show('scr-register');
+  if (!cfg || !cfg.teams) await loadConfig();
+  const teams = (cfg && cfg.teams) || [];
+  $('regSite').innerHTML = ((cfg && cfg.sites) || []).map(x => '<option>' + esc(x) + '</option>').join('') || '<option value="">—</option>';
+  $('regTeam').innerHTML = '<option value="">— כל הצוותים —</option>' + teams.map(x => '<option>' + esc(x) + '</option>').join('');
+  fillRegEmp();
+}
+function fillRegEmp() {
+  const team = $('regTeam').value;
+  const list = ((cfg && cfg.employees) || []).filter(e => !team || e.team === team);
+  $('regEmp').innerHTML = '<option value="">טלפון משותף (בחירת שם בכל משמרת)</option>' +
+    list.map(e => '<option value="' + esc(e.name) + '">' + esc(e.name) + ' – עובד קבוע</option>').join('');
+}
+$('regTeam').onchange = fillRegEmp;
 
 /* ---------- משמרות ועובד ---------- */
 function shiftKey(d = new Date()) {
@@ -143,34 +254,35 @@ function shiftKey(d = new Date()) {
   }
   return ymd(d);
 }
-// בכל החלפת משמרת המערכת מבקשת לבחור עובד מחדש
-const needEmployee = () => !emp || emp.shift !== shiftKey();
+// בטלפון משותף: בכל החלפת משמרת בוחרים עובד מחדש
+const needEmployee = () => !fixedEmp() && (!emp || emp.shift !== shiftKey());
 
 function showEmployees() {
   const list = $('empList');
   list.innerHTML = '';
   const teams = {};
-  (cfg.employees || []).forEach(e => (teams[e.team || 'כללי'] = teams[e.team || 'כללי'] || []).push(e));
-  Object.keys(teams).forEach(t => {
-    const h = document.createElement('div'); h.className = 'team'; h.textContent = 'צוות ' + t;
-    h.style.background = teamClr(t); list.appendChild(h);
-    teams[t].forEach(e => {
+  (cfg.employees || []).forEach(e => (teams[e.team || '—'] = teams[e.team || '—'] || []).push(e));
+  Object.keys(teams).forEach(tm => {
+    const h = document.createElement('div'); h.className = 'team'; h.textContent = tm;
+    h.style.background = teamClr(tm); list.appendChild(h);
+    teams[tm].forEach(e => {
       const b = document.createElement('button'); b.className = 'emp'; b.textContent = e.name;
       b.style.setProperty('--tc', teamClr(e.team));
-      b.onclick = () => { unlockAudio(); emp = { name: e.name, team: e.team, shift: shiftKey() }; LS.set('emp', emp); route(); };
+      b.onclick = () => { unlockAudio(); emp = { name: e.name, team: e.team, lang: e.lang, shift: shiftKey() }; LS.set('emp', emp); route(); };
       list.appendChild(b);
     });
   });
   $('empMsg').textContent = (cfg.employees || []).length ? '' : 'לא הוגדרו עובדים בלשונית "עובדים".';
   show('scr-employee');
+  updateHeader();
 }
 
 function updateHeader() {
-  $('who').textContent = emp ? emp.name + (emp.team ? ' · ' + emp.team : '') : 'סורק סיורים';
-  document.querySelector('header').style.setProperty('--tc', emp ? teamClr(emp.team) : '#1e293b');
-  const on = navigator.onLine;
+  $('who').textContent = emp ? emp.name + (emp.team ? ' · ' + emp.team : '') : (devTeam() || 'סורק סיורים');
+  document.querySelector('header').style.setProperty('--tc', emp ? teamClr(emp.team) : devTeam() ? teamClr(devTeam()) : '#1e293b');
+  const on = navigator.onLine, n = queue.length + faultQueue.length;
   $('net').innerHTML = '<span class="dot" style="background:' + (on ? '#22c55e' : '#f59e0b') + '"></span>' +
-    (on ? 'מחובר' : 'ללא קליטה') + (queue.length ? ' · ' + queue.length + ' ממתינות לשליחה' : '');
+    t(on ? 'online' : 'offline') + (n ? ' · ' + t('pending', n) : '');
 }
 
 /* ---------- מצלמה וסריקה ---------- */
@@ -184,115 +296,207 @@ async function startCam() {
       { fps: 12, qrbox: (w, h) => { const s = Math.floor(Math.min(w, h) * 0.7); return { width: s, height: s }; } },
       onCode, () => {});
     camOn = true;
-    $('hint').textContent = 'כוון את המצלמה אל הברקוד';
+    $('hint').textContent = t('scanHint');
   } catch (e) {
-    $('hint').textContent = 'לא ניתן לפתוח מצלמה. אשר הרשאת מצלמה ורענן את הדף.';
+    $('hint').textContent = t('cameraError');
   }
 }
 async function stopCam() { if (qr && camOn) { try { await qr.stop(); } catch (e) {} camOn = false; } }
 
-function onCode(text) {
-  if (busy) return;
-  busy = true; setTimeout(() => busy = false, 2600);
+let lastScan = null;   // הסריקה האחרונה – אליה משויך דיווח תקלה
 
+function onCode(text) {
+  if (busy || !$('scr-scan').classList.contains('on')) return;
   if (needEmployee()) { showEmployees(); return; }
 
   const m = String(text).trim().match(/^PT:(.+)$/);
   const p = m && cfg.points.find(x => x.id === m[1]);
-  if (!p) { feedback('err', '✕', 'ברקוד לא מוכר', 'הברקוד לא שייך למערכת הסיורים'); return; }
+  if (!p) return feedback('err', '✕', t('unknown'), t('unknownSub'));
+  if (devTeam() && p.team && p.team !== devTeam()) return feedback('err', '✕', t('wrongTeam'), pname(p), '', p);
 
   const last = lastByPoint[p.id];
-  if (last && Date.now() - last < 60000) {
-    feedback('warn', '!', 'כבר נסרק', p.name + ' · לפני ' + Math.round((Date.now() - last) / 1000) + ' שניות');
-    return;
-  }
+  if (last && Date.now() - last < 60000)
+    return feedback('warn', '!', t('already'), pname(p) + ' · ' + t('agoSec', Math.round((Date.now() - last) / 1000)));
 
   const now = new Date();
-  const scan = { id: uuid(), pointId: p.id, ts: now.toISOString(), employee: emp.name };
+  const scan = { id: uuid(), pointId: p.id, ts: now.toISOString(), employee: emp ? emp.name : '' };
   queue.push(scan); LS.set('queue', queue);
   lastByPoint[p.id] = Date.now(); LS.set('lastByPoint', lastByPoint);
+  lastScan = { id: scan.id, point: p };
 
-  feedback('ok', '✓', 'נסרק בהצלחה', p.name + ' · ' + hm(now),
-    navigator.onLine ? 'שולח…' : 'נשמר בטלפון, יישלח כשתחזור קליטה', p);
+  feedback('ok', '✓', t('scanned'), pname(p) + ' · ' + hm(now), navigator.onLine ? t('sending') : t('savedOffline'), p, true);
   sync(scan.id);
 }
 
 /* ---------- סנכרון (כולל מצב ללא קליטה) ---------- */
 let syncing = false;
-const STATUS_TXT = { 'בזמן': '✓ בזמן', 'מחוץ לטווח': '✕ מחוץ לטווח', 'כפול': 'כבר בוצע, לא נספר שוב' };
+const STATUS_KEY = { 'בזמן': 'st_on', 'מחוץ לטווח': 'st_out', 'כפול': 'st_dup' };
 
 async function sync(watchId) {
-  if (syncing || !queue.length || !deviceId) { updateHeader(); return; }
+  if (syncing || !deviceId) { updateHeader(); return; }
+  if (!queue.length && !faultQueue.length) { updateHeader(); return; }
   syncing = true;
   let more = false;
   try {
-    const batch = queue.slice(0, 50);
-    const res = await api('scan', { deviceId, deviceNow: new Date().toISOString(), scans: batch });
-    const done = new Set(res.results.map(r => r.id));
-    queue = queue.filter(s => !done.has(s.id)); LS.set('queue', queue);
-    const mine = watchId && res.results.find(r => r.id === watchId);
-    if (mine) {
-      setOvStatus(mine.ok ? (STATUS_TXT[mine.status] || mine.status) + (mine.note ? ' · ' + mine.note : '') : mine.error);
-      // סריקה מחוץ לטווח: המסך הופך לכתום כדי שהעובד יבין שהיא לא נספרה
-      if (mine.ok && mine.status !== 'בזמן' && $('overlay').classList.contains('show')) { $('overlay').className = 'show warn'; beep('warn'); }
+    if (queue.length) {
+      const batch = queue.slice(0, 50);
+      const res = await api('scan', { deviceId, deviceNow: new Date().toISOString(), scans: batch });
+      const done = new Set(res.results.map(r => r.id));
+      queue = queue.filter(s => !done.has(s.id)); LS.set('queue', queue);
+      const mine = watchId && res.results.find(r => r.id === watchId);
+      if (mine && $('overlay').classList.contains('show')) {
+        if (!mine.ok) {
+          setOvStatus(mine.code === 'wrong_team' ? t('wrongTeam') : mine.error);
+          $('overlay').className = 'show err'; $('ovActions').classList.remove('on'); beep('err');
+        } else if (!mine.duplicate) {
+          setOvStatus((t(STATUS_KEY[mine.status]) || mine.status) + (lang() === 'he' && mine.note ? ' · ' + mine.note : ''));
+          // סריקה מחוץ לטווח: המסך הופך לכתום כדי שהעובד יבין שהיא לא נספרה
+          if (mine.status !== 'בזמן') { $('overlay').className = 'show warn'; $('ovTitle').textContent = t('scannedNotCounted'); beep('warn'); }
+        }
+      }
     }
-    more = queue.length > 0;
+    if (faultQueue.length) {
+      const f = faultQueue[0];   // תקלה אחת בכל בקשה (בגלל גודל התמונה)
+      const res = await api('faults', { deviceId, faults: [f] });
+      const done = new Set(res.results.map(r => r.id));
+      faultQueue = faultQueue.filter(x => !done.has(x.id)); saveFaults();
+    }
+    more = queue.length > 0 || faultQueue.length > 0;
   } catch (e) {
-    if (watchId) setOvStatus('נשמר בטלפון, יישלח אוטומטית');
+    if (watchId) setOvStatus(t('savedOffline'));
   } finally {
     syncing = false; updateHeader();
     if (more) setTimeout(sync, 500);
   }
 }
 
-/* ---------- חיווי ויזואלי, קולי ורטט ---------- */
+/* ---------- חיווי: מסך, צליל, רטט ---------- */
 let audioCtx = null, ovTimer = null;
 function unlockAudio() { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch (e) {} }
 function beep(kind) {
   if (!audioCtx) return;
-  const seq = kind === 'ok' ? [[880, 0, .12], [1320, .15, .18]] : kind === 'warn' ? [[600, 0, .25]] : [[220, 0, .5]];
-  seq.forEach(([f, t, d]) => {
-    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-    o.frequency.value = f; o.type = 'square'; g.gain.value = .15;
-    o.connect(g); g.connect(audioCtx.destination);
-    o.start(audioCtx.currentTime + t); o.stop(audioCtx.currentTime + t + d);
-  });
+  try {
+    const seq = kind === 'ok' ? [[880, 0, .12], [1320, .15, .18]] : kind === 'warn' ? [[600, 0, .25]] : [[220, 0, .5]];
+    seq.forEach(([f, tt, d]) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.frequency.value = f; o.type = 'square'; g.gain.value = .15;
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(audioCtx.currentTime + tt); o.stop(audioCtx.currentTime + tt + d);
+    });
+  } catch (e) {}
 }
-function feedback(kind, icon, title, sub, status = '', point = null) {
+function feedback(kind, icon, title, sub, status = '', point = null, withActions = false) {
+  busy = true;
   const ov = $('overlay');
   ov.className = 'show ' + kind;
   $('ovIcon').textContent = icon; $('ovTitle').textContent = title;
   $('ovSub').textContent = sub; $('ovStatus').textContent = status;
   $('ovChips').innerHTML = point ? [[point.team, teamClr(point.team)], [point.site, siteClr(point.site)]]
-    .filter(c => c[0]).map(c => '<span style="color:' + c[1] + '">' + c[0].replace(/[<>&]/g, '') + '</span>').join('') : '';
+    .filter(c => c[0]).map(c => '<span style="color:' + c[1] + '">' + esc(c[0]) + '</span>').join('') : '';
+  $('ovActions').classList.toggle('on', withActions);
+  const bar = $('ovBar'); bar.classList.remove('run'); void bar.offsetWidth; bar.classList.add('run');
+  bar.style.display = withActions ? '' : 'none';
   beep(kind);
   if (navigator.vibrate) navigator.vibrate(kind === 'ok' ? 120 : [200, 100, 200]);
   clearTimeout(ovTimer);
-  ovTimer = setTimeout(() => ov.className = '', 2500);
+  // עם כפתורים: 4 שניות ואז נסגר כ"תקין". בלי כפתורים: 2.5 שניות
+  ovTimer = setTimeout(closeOverlay, withActions ? 4000 : 2500);
 }
-const setOvStatus = (t) => { if ($('overlay').classList.contains('show')) $('ovStatus').textContent = t; };
+function closeOverlay() { clearTimeout(ovTimer); $('overlay').className = ''; busy = false; }
+const setOvStatus = (x) => { if ($('overlay').classList.contains('show')) $('ovStatus').textContent = x; };
+
+$('btnOk').onclick = (e) => { e.stopPropagation(); closeOverlay(); };
+$('btnFault').onclick = (e) => { e.stopPropagation(); clearTimeout(ovTimer); $('overlay').className = ''; openFault(); };
+$('overlay').onclick = () => { if (!$('ovActions').classList.contains('on')) closeOverlay(); };
+
+/* ---------- דיווח תקלה ---------- */
+let photoData = null;
+function openFault() {
+  if (!lastScan) { busy = false; return; }
+  const p = lastScan.point;
+  $('faultPoint').textContent = pname(p);
+  $('faultPoint').style.background = teamClr(p.team);
+  $('faultText').value = ''; $('faultMsg').textContent = '';
+  setPhoto(null);
+  applyLang();
+  show('scr-fault');
+  busy = false;
+}
+function setPhoto(d) {
+  photoData = d;
+  $('faultPreview').style.display = d ? 'block' : 'none';
+  if (d) $('faultPreview').src = d; else $('faultPreview').removeAttribute('src');
+  $('btnRemovePhoto').style.display = d ? 'block' : 'none';
+  $('photoLbl').textContent = d ? t('retakePhoto') : t('addPhoto');
+}
+// הקטנת התמונה ל-1280 פיקסלים כדי שתישלח מהר גם בקליטה חלשה
+$('faultPhoto').onchange = (ev) => {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  const img = new Image(), url = URL.createObjectURL(file);
+  img.onload = () => {
+    const k = Math.min(1, 1280 / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(url);
+    setPhoto(c.toDataURL('image/jpeg', 0.7));
+  };
+  img.src = url;
+  ev.target.value = '';
+};
+$('btnRemovePhoto').onclick = () => setPhoto(null);
+$('btnFaultCancel').onclick = () => { setPhoto(null); show('scr-scan'); };
+function saveFaults() {
+  if (LS.set('faults', faultQueue)) return;
+  // אין מקום בזיכרון הטלפון: שומרים בלי התמונות (הטקסט חשוב יותר)
+  LS.set('faults', faultQueue.map(f => Object.assign({}, f, { photo: null })));
+}
+$('btnFaultSend').onclick = () => {
+  const text = $('faultText').value.trim();
+  if (!text && !photoData) { $('faultMsg').textContent = t('faultNeedSomething'); return; }
+  const p = lastScan.point;
+  faultQueue.push({ id: uuid(), scanId: lastScan.id, pointId: p.id, ts: new Date().toISOString(),
+    lang: lang(), text: text, photo: photoData, employee: emp ? emp.name : '' });
+  saveFaults();
+  setPhoto(null);
+  show('scr-scan');
+  feedback('ok', '✓', navigator.onLine ? t('faultSent') : t('faultSaved'), pname(p), '', p);
+  sync();
+};
 
 /* ---------- אירועים ---------- */
 $('btnReg').onclick = async () => {
   unlockAudio();
   $('regMsg').textContent = 'מאשר…';
   try {
-    const r = await api('registerDevice', { password: $('regPw').value, name: $('regName').value });
+    const r = await api('registerDevice', { username: $('regUser').value.trim(), password: $('regPw').value, name: $('regName').value,
+      site: $('regSite').value, team: $('regTeam').value, employee: $('regEmp').value });
     deviceId = r.deviceId; LS.set('deviceId', deviceId);
     $('regPw').value = '';
+    emp = null; LS.set('emp', null);
     await loadConfig();
     route();
   } catch (e) { $('regMsg').textContent = e.message; }
 };
+$('btnReRegister').onclick = () => { deviceId = null; LS.set('deviceId', null); emp = null; LS.set('emp', null); showRegister(); };
 $('btnSwitch').onclick = () => { emp = null; LS.set('emp', null); showEmployees(); };
-$('overlay').onclick = () => $('overlay').className = '';
 document.body.addEventListener('click', unlockAudio, { once: true });
 
-window.addEventListener('online', () => { updateHeader(); sync(); loadConfig(); });
+window.addEventListener('online', () => { updateHeader(); sync(); loadConfig().then(refreshDevice); });
 window.addEventListener('offline', updateHeader);
-setInterval(sync, 20000);                                     // ניסיון שליחה חוזר
-setInterval(() => { if (navigator.onLine) loadConfig(); }, 10 * 60000); // רענון נקודות/עובדים
+setInterval(sync, 20000);                                                    // ניסיון שליחה חוזר
+setInterval(() => { if (navigator.onLine) loadConfig().then(refreshDevice); }, 10 * 60000); // שינויים מהמנהל
 setInterval(() => { if (deviceId && cfg && needEmployee() && $('scr-scan').classList.contains('on')) showEmployees(); }, 60000);
+
+// המנהל שינה שיוך/ביטל מכשיר → מעדכנים את המסך (רק כשהעובד במסך הסריקה)
+function refreshDevice() {
+  if (!cfg || !deviceId) return;
+  const onScan = $('scr-scan').classList.contains('on') || $('scr-employee').classList.contains('on');
+  if (cfg.deviceOk === false || (fixedEmp() && (!emp || emp.name !== cfg.device.employee)) || (!fixedEmp() && emp && devTeam() && emp.team !== devTeam())) {
+    if (onScan) { if (!fixedEmp()) { emp = null; LS.set('emp', null); } route(); }
+  } else { applyLang(); updateHeader(); }
+}
 
 // השארת המסך דלוק בזמן סיור
 async function keepAwake() { try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch (e) {} }
@@ -301,12 +505,13 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 /* ---------- הפעלה ---------- */
 (async function boot() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
-  if (typeof API_URL === 'undefined' || API_URL.indexOf('http') !== 0) {
+  if (typeof API_URL === 'undefined' || String(API_URL).indexOf('http') !== 0) {
     document.body.innerHTML = '<p style="padding:20px">חסרה כתובת שרת בקובץ config.js</p>'; return;
   }
   keepAwake();
+  applyLang();
   updateHeader();
-  if (deviceId) { if (!cfg) await loadConfig(); else loadConfig().then(() => { if (cfg && !cfg.deviceOk) console.warn('מכשיר לא מאושר'); }); }
+  if (deviceId) { if (!cfg) await loadConfig(); else await Promise.race([loadConfig(), new Promise(r => setTimeout(r, 2500))]); }
   route();
   sync();
 })();
