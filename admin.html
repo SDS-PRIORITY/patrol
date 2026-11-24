@@ -188,7 +188,15 @@
     <div class="kpis" id="kpis"></div>
     <div class="card"><h2 id="dashH">מצב הנקודות היום</h2>
       <p class="mut">נספרים רק סיורים שחלון הזמן שלהם כבר נסגר. ירוק = הכול בוצע בטווח, אדום = יש סיורים שהוחמצו. לחיצה על מספר ההחמצות מציגה מתי, ומאפשרת לסמן החמצה כ"מוצדקת". אפשר לבחור תאריך קודם למעלה.</p>
-      <div id="tblToday"></div></div>
+      <div id="tblToday"></div>
+      <div class="bar hide" id="bulkBar" style="margin-top:12px;background:#f6f8fb;border-radius:10px;padding:10px">
+        <b id="bulkN"></b>
+        <div><label>משעה (לא חובה)</label><input type="time" id="bulkFrom" style="width:130px"></div>
+        <div><label>עד שעה</label><input type="time" id="bulkTo" style="width:130px"></div>
+        <div style="flex:1;min-width:200px"><label>סיבה *</label><input id="bulkReason" placeholder="למשל: מעלית תקועה – אין גישה לקומה"></div>
+        <button class="btn" id="btnBulk">סמן את ההחמצות כמוצדקות</button>
+        <button class="btn sec sm" id="btnBulkClear">בטל בחירה</button>
+      </div></div>
     <div class="card"><h2 id="scansH">סריקות אחרונות היום</h2><div id="tblScans"></div></div>
   </section>
 
@@ -208,6 +216,7 @@
         <div><label>קומה</label><input id="f_floor" placeholder="2"></div>
         <div><label>תיאור</label><input id="f_desc"></div>
         <div><label>צוות</label><input id="f_team" list="teams" placeholder="חשמל / ניקיון"><datalist id="teams"></datalist></div>
+        <div><label>עובד אחראי (לא חובה)</label><select id="f_owner"></select></div>
       </div>
       <div class="sched">
         <label style="margin-top:0">מתי צריך לסרוק?</label>
@@ -294,6 +303,10 @@
     <div class="card"><div class="bar" style="justify-content:space-between"><h2 style="margin:0">עובדים</h2><button class="btn" id="btnEmpNew">+ עובד חדש</button></div>
       <p class="mut">העובדים שמופיעים בטלפונים. עובד שעזב: "ערוך" ← לבטל "פעיל" (ההיסטוריה שלו נשמרת). השפה קובעת באיזו שפה הטלפון שלו מוצג.</p>
       <div id="tblEmps"></div></div>
+    <div class="card"><div class="bar" style="justify-content:space-between"><h2 style="margin:0">היעדרויות וגיבויים</h2><button class="btn" id="btnAbsNew">+ היעדרות</button></div>
+      <p class="mut">עובד חולה / בחופשה: לכל נקודה שבאחריותו בוחרים "לא נדרש" (ההחמצות מוצדקות אוטומטית) או עובד מגבה מאותו צוות (הנקודה עדיין נדרשת, וההחמצות נזקפות עליו).
+        "עובד אחראי" לנקודה נקבע בטופס הנקודה.</p>
+      <div id="tblAbs"></div></div>
   </section>
 
   <section id="tab-sites" class="tab">
@@ -531,7 +544,7 @@ $('scSite').onchange = $('scTeam').onchange = () => {
   scope = { site: $('scSite').value, team: $('scTeam').value }; LS.set('scope:' + me().user, scope); scopeLook();
   const tab = (document.querySelector('nav button.on') || {}).dataset || {};
   if (tab.tab === 'dash') renderToday(); if (tab.tab === 'points') renderPoints(); if (tab.tab === 'qr') renderQrList();
-  if (tab.tab === 'faults') renderFaults(); if (tab.tab === 'devices') renderDevices(); if (tab.tab === 'emps') renderEmps();
+  if (tab.tab === 'faults') renderFaults(); if (tab.tab === 'devices') renderDevices(); if (tab.tab === 'emps') { renderEmps(); renderAbs(); }
 };
 function showScope(tab) { $('scope').classList.toggle('hide', SCOPE_TABS.indexOf(tab) < 0); }
 
@@ -592,7 +605,7 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = async () => {
   if (b.dataset.tab === 'qr') renderQrList();
   if (b.dataset.tab === 'faults') loadFaults();
   if (b.dataset.tab === 'devices') loadData().then(renderDevices);
-  if (b.dataset.tab === 'emps') loadData().then(renderEmps);
+  if (b.dataset.tab === 'emps') loadData().then(() => { renderEmps(); loadAbs(); });
   if (b.dataset.tab === 'sites') loadData().then(renderSites);
   if (b.dataset.tab === 'managers') loadManagers();
   if (b.dataset.tab === 'audit') loadAudit();
@@ -678,6 +691,7 @@ function renderPoints() {
       { k: 'site', t: 'אתר', v: p => p['קוד אתר'], h: p => siteChip(p['קוד אתר']) },
       { k: 'floor', t: 'קומה', v: p => p['קומה'] },
       { k: 'team', t: 'צוות', v: p => p['צוות'], h: p => teamChip(p['צוות']) },
+      { k: 'owner', t: 'אחראי', v: p => p['עובד אחראי'] || '' },
       { k: 'rule', t: 'כלל', v: p => ruleText(p), nf: true },
       { k: 'days', t: 'ימים', v: p => p['ימים'] || 'כל יום' },
       { k: 'act', t: 'פעיל', v: p => isOn(p['פעיל']) ? 'פעיל' : 'לא פעיל', h: p => isOn(p['פעיל']) ? '✓' : '—' },
@@ -777,6 +791,15 @@ document.querySelector('.sched').addEventListener('click', (e) => {
   renderSched();
 });
 // חשמל: הצעה אוטומטית "פעם אחת בכל משמרת" (רק לנקודה חדשה שעוד לא נבחר לה תזמון)
+/** עובד אחראי: עובדים פעילים מהצוות (ומהאתר) של הנקודה + הערך הנוכחי */
+function fillOwner(cur) {
+  const team = $('f_team').value.trim(), site = $('f_site').value;
+  const list = data.employees.filter(e => isOn(e['פעיל']) && (!team || e['צוות'] === team) && (!e['אתר'] || !site || e['אתר'] === site)).map(e => e['שם']);
+  if (cur && list.indexOf(cur) < 0) list.unshift(cur);
+  $('f_owner').innerHTML = '<option value="">— ללא (כל הצוות) —</option>' + list.map(n => '<option' + (n === cur ? ' selected' : '') + ' value="' + esc(n) + '">' + esc(n) + '</option>').join('');
+}
+$('f_team').addEventListener('change', () => fillOwner($('f_owner').value));
+$('f_site').addEventListener('change', () => fillOwner($('f_owner').value));
 $('f_team').addEventListener('change', () => {
   if (!editingId && !sched.mode && $('f_team').value.trim() === 'חשמל') {
     sched.mode = 'shift'; sched.count = 1; shiftNames().forEach(x => sched.shifts.add(x)); renderSched();
@@ -814,6 +837,7 @@ function clearForm() {
     .concat(Object.keys(NAME_COLS).map(k => 'f_n_' + k)).forEach(id => { if ($(id)) $(id).value = ''; });
   const defSite = scope.site && scope.site !== '*mine' && (data.editSites || []).indexOf(scope.site) >= 0 ? scope.site : (data.editSites || [])[0] || '';
   fillSiteSelect('f_site', defSite);
+  fillOwner('');
   setReadOnly(false);
   $('f_from').value = (data && data.today) || '';
   $('f_active').checked = true;
@@ -846,6 +870,7 @@ async function editPoint(id) {
   $('f_name').value = p['שם נקודה']; fillSiteSelect('f_site', p['קוד אתר']); $('f_desc').value = p['תיאור'];
   $('f_num').value = p['מספר'] || ''; $('f_floor').value = p['קומה'] || '';
   $('f_team').value = p['צוות'];
+  fillOwner(p['עובד אחראי'] || '');
   $('f_gap').value = p["מרווח מינימלי (דק')"];
   $('f_active').checked = isOn(p['פעיל']);
   $('f_from').value = toDateInput(p['פעיל מתאריך']);
@@ -863,7 +888,7 @@ $('btnSave').onclick = async () => {
   const pt = {
     'PointID': editingId, 'שם נקודה': $('f_name').value.trim(), 'קוד אתר': $('f_site').value.trim(),
     'מספר': $('f_num').value.trim(), 'קומה': $('f_floor').value.trim(),
-    'תיאור': $('f_desc').value.trim(), 'צוות': $('f_team').value.trim(),
+    'תיאור': $('f_desc').value.trim(), 'צוות': $('f_team').value.trim(), 'עובד אחראי': $('f_owner').value,
     'ימים': days.length === 7 ? '' : days.join(','),
     "מרווח מינימלי (דק')": $('f_gap').value, 'פעיל': $('f_active').checked,
     'פעיל מתאריך': $('f_from').value,
@@ -896,8 +921,29 @@ $('btnSave').onclick = async () => {
 /* ---------- דשבורד ---------- */
 let dashTimer = null;
 let lastToday = null;
+/* הצדקה בבת אחת: מסמנים נקודות בטבלה, אפשר טווח שעות, סיבה אחת */
+const bulkSel = new Set();
+function bulkLook() {
+  const ids = [...bulkSel].filter(id => (lastToday ? lastToday.points : []).some(p => p.id === id && p.missed));
+  $('bulkBar').classList.toggle('hide', !ids.length);
+  const n = ids.reduce((a, id) => a + lastToday.points.find(p => p.id === id).missed, 0);
+  $('bulkN').textContent = ids.length + ' נקודות · ' + n + ' החמצות';
+}
+$('btnBulkClear').onclick = () => { bulkSel.clear(); renderToday(); };
+$('btnBulk').onclick = async () => {
+  const ids = [...bulkSel], reason = $('bulkReason').value.trim();
+  if (!reason) return notify('חסרה סיבה', 'כתוב למה ההחמצות מוצדקות.');
+  const win = $('bulkFrom').value || $('bulkTo').value ? ' בין ' + ($('bulkFrom').value || '00:00') + ' ל-' + ($('bulkTo').value || '23:59') : '';
+  if (!await modal({ title: 'הצדקה בבת אחת', html: 'לסמן כמוצדקות את כל ההחמצות של ' + ids.length + ' הנקודות שנבחרו ב-' + esc(lastToday.date) + esc(win) + '?<br>סיבה: <b>' + esc(reason) + '</b>', ok: 'סמן' })) return;
+  try {
+    const r = await api('admin.excuseBulk', { date: lastToday.date, pointIds: ids, from: $('bulkFrom').value, to: $('bulkTo').value, reason });
+    bulkSel.clear(); $('bulkReason').value = ''; $('bulkFrom').value = ''; $('bulkTo').value = '';
+    await loadToday(); notify('סומן ✓', r.count + ' החמצות סומנו כמוצדקות.');
+  } catch (e) { notify('לא סומן', esc(e.message)); }
+};
 async function loadToday() {
   clearTimeout(dashTimer);
+  if (lastToday && $('dashDate').value && $('dashDate').value !== lastToday.date) bulkSel.clear();
   try {
     const t = await api('admin.today', { date: $('dashDate').value || '' });
     lastToday = t;
@@ -926,17 +972,23 @@ function renderToday() {
   xt('tblToday', { file: 'מצב נקודות ' + t.date, rows: pts, empty: 'אין נקודות באתר/צוות שבחרת',
     rc: p => p.missed ? 'row-err' : p.required ? 'row-ok' : '',
     cols: [
+      { k: 'sel', t: '', x: true, h: p => p.canEdit && p.missed ? '<input type="checkbox" class="chk bsel" value="' + esc(p.id) + '"' + (bulkSel.has(p.id) ? ' checked' : '') + '>' : '' },
       { k: 'site', t: 'אתר', v: p => p.site, h: p => siteChip(p.site) },
       { k: 'team', t: 'צוות', v: p => p.team, h: p => teamChip(p.team) },
       { k: 'name', t: 'נקודה', v: p => (p.num ? p.num + ' · ' : '') + p.name, nf: true },
       { k: 'rule', t: 'כלל', v: p => p.rule },
       { k: 'req', t: 'נדרש עד עכשיו', v: p => p.required, s: p => p.required, nf: true },
       { k: 'on', t: 'בוצעו', v: p => p.on, s: p => p.on, nf: true },
+      { k: 'owner', t: 'אחראי', v: p => p.owner || '' },
       { k: 'miss', t: 'הוחמצו', v: p => p.missed, s: p => p.missed,
         h: p => p.missedList.length ? '<button class="linkbtn" data-miss="' + esc(p.id) + '">' + p.missed + ' ▸</button>' : String(p.missed) },
       { k: 'ex', t: 'מוצדקות', v: p => p.excused || '', s: p => p.excused, nf: true },
       { k: 'last', t: 'סריקה אחרונה', v: p => String(p.last).slice(11), nf: true }],
-    after: () => document.querySelectorAll('#tblToday [data-miss]').forEach(b => b.onclick = () => showMisses(b.dataset.miss)) });
+    after: () => {
+      document.querySelectorAll('#tblToday [data-miss]').forEach(b => b.onclick = () => showMisses(b.dataset.miss));
+      document.querySelectorAll('#tblToday .bsel').forEach(c => c.onchange = () => { c.checked ? bulkSel.add(c.value) : bulkSel.delete(c.value); bulkLook(); });
+      bulkLook();
+    } });
   const pill = (st) => '<span class="pill ' + (st === 'בזמן' ? 'p-ok' : st === 'כפול' ? 'p-warn' : 'p-err') + '">' + esc(st) + '</span>';
   xt('tblScans', { file: 'סריקות ' + t.date, rows: scans, empty: 'אין סריקות',
     cols: [
@@ -968,8 +1020,10 @@ function showMisses(pointId) {
   const p = todayPoints.find(x => x.id === pointId); if (!p) return;
   const html = '<div class="mlist">' + p.missedList.map((m, i) => '<div' + (m.excused ? ' class="row-ex"' : '') + '><span>' + esc(m.label) +
     (m.who && m.who.length ? '<br><span class="mut">במשמרת: ' + esc(m.who.join(', ')) + '</span>' : '') +
+    (m.owner ? '<br><span class="mut">באחריות: ' + esc(m.owner) + '</span>' : '') +
     (m.excused ? '<br><span class="mut">מוצדק: ' + esc(m.reason) + '</span>' : '') + '</span>' +
-    (!p.canEdit ? '<span class="ro">צפייה בלבד</span>' : m.excused ? '<button class="btn sec sm" data-un="' + i + '">בטל הצדקה</button>' : '<button class="btn sm" data-ex="' + i + '">מוצדק…</button>') + '</div>').join('') + '</div>' +
+    (!p.canEdit ? '<span class="ro">צפייה בלבד</span>' : m.auto ? '<span class="ro" title="בוטל דרך לשונית עובדים ← היעדרויות">לפי היעדרות</span>'
+      : m.excused ? '<button class="btn sec sm" data-un="' + i + '">בטל הצדקה</button>' : '<button class="btn sm" data-ex="' + i + '">מוצדק…</button>') + '</div>').join('') + '</div>' +
     '<p class="mut">החמצה מוצדקת (עובד חולה, חדר סגור לשיפוץ וכו\') לא נספרת באחוז העמידה, ומופיעה בדוח בנפרד עם הסיבה.</p>';
   modal({ title: 'החמצות – ' + p.name, html, ok: 'סגור', cancel: false, onOpen: (done) => {
     document.querySelectorAll('[data-ex]').forEach(b => b.onclick = async () => {
@@ -1137,7 +1191,8 @@ function renderEmps() {
       { k: 'site', t: 'אתר', v: e => e['אתר'] || 'כל האתרים', h: e => e['אתר'] ? siteChip(e['אתר']) : '<span class="mut">כל האתרים</span>' },
       { k: 'lang', t: 'שפה', v: e => e['שפה'] || 'עברית' },
       { k: 'phone', t: 'טלפון קבוע', v: e => fixed[e['שם']] || '', nf: true, h: e => fixed[e['שם']] ? esc(fixed[e['שם']]) : '<span class="mut">—</span>' },
-      { k: 'act', t: 'מצב', v: e => isOn(e['פעיל']) ? 'פעיל' : 'לא פעיל', h: e => isOn(e['פעיל']) ? '✓' : '<span class="pill p-warn">לא פעיל</span>' },
+      { k: 'act', t: 'מצב', v: e => !isOn(e['פעיל']) ? 'לא פעיל' : absToday(e['שם']) ? 'נעדר היום' : 'פעיל',
+        h: e => !isOn(e['פעיל']) ? '<span class="pill p-warn">לא פעיל</span>' : absToday(e['שם']) ? '<span class="pill p-warn">' + esc(absToday(e['שם']).reason) + ' עד ' + esc(absToday(e['שם']).to.slice(5)) + '</span>' : '✓' },
       { k: 'btn', t: '', x: true, h: e => e._canEdit ? '<button class="btn sec sm" data-emp="' + esc(e['שם']) + '">ערוך</button>' : '<span class="ro">צפייה בלבד</span>' }],
     after: () => document.querySelectorAll('#tblEmps [data-emp]').forEach(b => b.onclick = () => editEmp(b.dataset.emp)) });
 }
@@ -1160,6 +1215,76 @@ async function editEmp(name) {
   catch (err) { notify('לא נשמר', esc(err.message)); }
 }
 $('btnEmpNew').onclick = () => editEmp('');
+
+/* ---------- היעדרויות ---------- */
+let absRows = [];
+const absToday = (n) => absRows.find(a => a.emp === n && a.from <= data.today && a.to >= data.today);
+async function loadAbs() {
+  try { absRows = (await api('admin.absences')).rows; } catch (e) { absRows = []; }
+  renderAbs(); renderEmps();
+}
+function renderAbs() {
+  const today = data.today, empSite = (n) => (data.employees.find(e => e['שם'] === n) || {})['אתר'] || '';
+  const ptName = (id) => { const p = data.points.find(x => x.PointID === id); return p ? (p['מספר'] ? p['מספר'] + ' · ' : '') + p['שם נקודה'] : id; };
+  const rows = absRows.filter(a => !empSite(a.emp) || inScope(empSite(a.emp), ''));
+  xt('tblAbs', { file: 'היעדרויות', rows, empty: 'אין היעדרויות פעילות', rc: a => a.to < today ? 'row-ex' : '',
+    cols: [
+      { k: 'emp', t: 'עובד', v: a => a.emp },
+      { k: 'from', t: 'מתאריך', v: a => a.from, nf: true },
+      { k: 'to', t: 'עד', v: a => a.to, nf: true },
+      { k: 'state', t: 'מצב', v: a => a.to < today ? 'הסתיימה' : a.from > today ? 'עתידית' : 'עכשיו',
+        h: a => a.to < today ? '<span class="mut">הסתיימה</span>' : a.from > today ? 'עתידית' : '<span class="pill p-warn">עכשיו</span>' },
+      { k: 'reason', t: 'סיבה', v: a => a.reason },
+      { k: 'plan', t: 'נקודות', nf: true, v: a => Object.keys(a.plan).map(id => ptName(id) + ': ' + (a.plan[id] === '-' ? 'לא נדרש' : 'מגבה ' + a.plan[id])).join(' | '),
+        h: a => Object.keys(a.plan).length ? Object.keys(a.plan).map(id => esc(ptName(id)) + ': ' + (a.plan[id] === '-' ? '<span class="mut">לא נדרש</span>' : '<b>' + esc(a.plan[id]) + '</b>')).join('<br>') : '<span class="mut">—</span>' },
+      { k: 'by', t: 'נרשם ע"י', v: a => a.by, nf: true },
+      { k: 'btn', t: '', x: true, h: a => '<button class="btn sec sm" data-abs="' + esc(a.id) + '">ערוך</button> <button class="btn sec sm" data-absx="' + esc(a.id) + '">בטל</button>' }],
+    after: () => {
+      document.querySelectorAll('#tblAbs [data-abs]').forEach(b => b.onclick = () => editAbs(b.dataset.abs));
+      document.querySelectorAll('#tblAbs [data-absx]').forEach(b => b.onclick = async () => {
+        const a = absRows.find(x => x.id === b.dataset.absx);
+        if (!await modal({ title: 'ביטול היעדרות', html: 'לבטל את ההיעדרות של <b>' + esc(a.emp) + '</b> (' + esc(a.from) + ' – ' + esc(a.to) + ')?<br><span class="mut">ההחמצות בנקודות שלו יחזרו להיספר כרגיל.</span>', ok: 'בטל היעדרות', cancelText: 'חזור' })) return;
+        try { await api('admin.cancelAbsence', { id: a.id }); loadAbs(); } catch (e) { notify('שגיאה', esc(e.message)); }
+      });
+    } });
+}
+async function editAbs(id) {
+  const a = id ? absRows.find(x => x.id === id) : null;
+  const emps = data.employees.filter(e => isOn(e['פעיל']) && e._canEdit);
+  const empOpts = emps.map(e => '<option' + (a && a.emp === e['שם'] ? ' selected' : '') + ' value="' + esc(e['שם']) + '">' + esc(e['שם']) + ' (' + esc(e['צוות']) + ')</option>').join('');
+  const html = '<div class="grid" style="grid-template-columns:1fr 1fr">' +
+    '<div><label>עובד *</label><select id="ab_emp"' + (a ? ' disabled' : '') + '>' + (a ? '' : '<option value="">— בחר —</option>') + empOpts + '</select></div>' +
+    '<div><label>סיבה *</label><input id="ab_reason" list="ab_reasons" value="' + esc(a ? a.reason : 'מחלה') + '"><datalist id="ab_reasons"><option value="מחלה"><option value="חופשה"><option value="מילואים"><option value="אחר"></datalist></div>' +
+    '<div><label>מתאריך *</label><input type="date" id="ab_from" value="' + esc(a ? a.from : data.today) + '"></div>' +
+    '<div><label>עד תאריך *</label><input type="date" id="ab_to" value="' + esc(a ? a.to : data.today) + '"></div></div>' +
+    '<h3 style="font-size:15px;margin:14px 0 6px">הנקודות באחריותו</h3><div id="ab_plan"></div>';
+  const drawPlan = () => {
+    const name = $('ab_emp').value, e = data.employees.find(x => x['שם'] === name);
+    if (!e) { $('ab_plan').innerHTML = '<p class="mut">בחר עובד</p>'; return; }
+    const mine = data.points.filter(p => isOn(p['פעיל']) && p['עובד אחראי'] === name);
+    if (a) Object.keys(a.plan).forEach(id => { if (!mine.some(p => p.PointID === id)) { const p = data.points.find(x => x.PointID === id); if (p) mine.push(p); } });
+    if (!mine.length) { $('ab_plan').innerHTML = '<p class="mut">לעובד אין נקודות באחריותו (קובעים "עובד אחראי" בטופס הנקודה). ההיעדרות תירשם לדוחות בלבד.</p>'; return; }
+    const backups = data.employees.filter(x => isOn(x['פעיל']) && x['שם'] !== name && x['צוות'] === e['צוות'] && (!x['אתר'] || !e['אתר'] || x['אתר'] === e['אתר'])).map(x => x['שם']);
+    $('ab_plan').innerHTML = '<table><tr><th>נקודה</th><th>בזמן ההיעדרות</th></tr>' + mine.map(p => {
+      const cur = a && a.plan[p.PointID] ? a.plan[p.PointID] : '-';
+      return '<tr><td>' + esc((p['מספר'] ? p['מספר'] + ' · ' : '') + p['שם נקודה']) + '</td><td><select class="ab_sel" data-p="' + esc(p.PointID) + '">' +
+        '<option value="-"' + (cur === '-' ? ' selected' : '') + '>לא נדרש (מוצדק אוטומטית)</option>' +
+        backups.map(b => '<option' + (b === cur ? ' selected' : '') + ' value="' + esc(b) + '">מגבה: ' + esc(b) + '</option>').join('') + '</select></td></tr>';
+    }).join('') + '</table>' + (backups.length ? '<p class="mut"><a class="linkbtn" id="ab_all">אותו מגבה לכל הנקודות…</a></p>' : '<p class="mut">אין עובד פעיל אחר בצוות ' + esc(e['צוות']) + ' שיכול לגבות.</p>');
+    const all = $('ab_all'); if (all) all.onclick = () => {
+      const first = document.querySelector('.ab_sel'); const opts = [...first.options].map(o => o.value);
+      const next = opts[(opts.indexOf(first.value) + 1) % opts.length];
+      document.querySelectorAll('.ab_sel').forEach(s => s.value = next);
+    };
+  };
+  const ok = await modal({ title: a ? 'עריכת היעדרות' : 'היעדרות חדשה', html, ok: 'שמור', onOpen: () => { $('ab_emp').onchange = drawPlan; drawPlan(); } });
+  if (!ok) return;
+  const plan = {}; document.querySelectorAll('.ab_sel').forEach(s => plan[s.dataset.p] = s.value);
+  const absence = { id: a ? a.id : '', emp: $('ab_emp').value, from: $('ab_from').value, to: $('ab_to').value, reason: $('ab_reason').value.trim(), plan };
+  try { await api('admin.saveAbsence', { absence }); await loadAbs(); notify('נשמר ✓', 'ההחמצות בנקודות שסומנו "לא נדרש" יוצדקו אוטומטית.'); }
+  catch (e) { notify('לא נשמר', esc(e.message)); }
+}
+$('btnAbsNew').onclick = () => editAbs('');
 
 /* ---------- מנהלים (מנהל-על) ---------- */
 let mgrData = null, mgrEditing = '';
