@@ -66,6 +66,28 @@
   #modal h3 { margin:0 0 10px; font-size:17px; }
   #modal .acts { display:flex; gap:10px; justify-content:flex-end; margin-top:14px; }
   .mlist div { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); }
+  /* ===== טבלה כמו Excel ===== */
+  .xt-bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:0 0 8px; }
+  .xt-bar input { flex:1; min-width:180px; width:auto; }
+  .xt-bar .cnt { color:var(--mut); font-size:13px; white-space:nowrap; }
+  .xt-wrap { overflow-x:auto; }
+  .xt th { cursor:pointer; user-select:none; white-space:nowrap; }
+  .xt th.ns { cursor:default; }
+  .xt th .ar { color:#2563eb; margin-inline-start:3px; font-size:11px; }
+  .xt th .fb { margin-inline-start:5px; border:1px solid #c9d2df; background:#fff; color:var(--mut); border-radius:5px; font-size:10px; line-height:14px; padding:0 4px; cursor:pointer; }
+  .xt th .fb.act { background:#2563eb; color:#fff; border-color:#2563eb; }
+  .xt-dd { position:fixed; z-index:60; background:#fff; border:1px solid #c9d2df; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,.18); padding:10px; width:240px; font-size:14px; }
+  .xt-dd .ops { display:flex; justify-content:space-between; border-bottom:1px solid var(--line); padding-bottom:6px; margin-bottom:6px; font-size:13px; }
+  .xt-dd .ops a { color:#1d4ed8; cursor:pointer; }
+  .xt-dd .vals { max-height:260px; overflow:auto; }
+  .xt-dd .vals label { display:flex; align-items:center; gap:6px; color:var(--fg); font-size:14px; margin:0; padding:3px 0; cursor:pointer; }
+  .xt-dd input[type=text] { margin-bottom:6px; padding:6px 8px; }
+  .xt-dd .acts { display:flex; justify-content:flex-end; gap:6px; margin-top:8px; }
+  /* סינון אתר/צוות למעלה */
+  .scope { display:flex; gap:10px; align-items:center; flex-wrap:wrap; max-width:1200px; margin:14px auto -4px; padding:0 18px; }
+  .scope label { display:inline; margin:0 4px 0 0; font-size:14px; color:var(--mut); }
+  .scope select { width:auto; min-width:150px; padding:6px 8px; }
+  .scope .on { background:#fff4d6; border-color:#f0c36a; }
   /* ===== טופס תזמון בקוביות ===== */
   .sched { margin-top:14px; border:1px solid var(--line); border-radius:12px; padding:14px; background:#fbfcfe; }
   .sched > label, .sched .lab { display:block; font-size:13px; color:var(--mut); margin:12px 0 6px; }
@@ -139,6 +161,11 @@
   </nav>
   <div class="who"><span id="whoName"></span><button id="btnAccount">החשבון שלי</button><button id="btnLogout">יציאה</button></div>
 </header>
+<div class="scope" id="scope">
+  <label for="scSite">אתר</label><select id="scSite"></select>
+  <label for="scTeam">צוות</label><select id="scTeam"></select>
+  <span class="mut" id="scNote"></span>
+</div>
 <main>
 
   <!-- דשבורד -->
@@ -154,13 +181,16 @@
     <div class="kpis" id="kpis"></div>
     <div class="card"><h2 id="dashH">מצב הנקודות היום</h2>
       <p class="mut">נספרים רק סיורים שחלון הזמן שלהם כבר נסגר. ירוק = הכול בוצע בטווח, אדום = יש סיורים שהוחמצו. לחיצה על מספר ההחמצות מציגה מתי, ומאפשרת לסמן החמצה כ"מוצדקת". אפשר לבחור תאריך קודם למעלה.</p>
-      <table id="tblToday"></table></div>
-    <div class="card"><h2 id="scansH">סריקות אחרונות היום</h2><table id="tblScans"></table></div>
+      <div id="tblToday"></div></div>
+    <div class="card"><h2 id="scansH">סריקות אחרונות היום</h2><div id="tblScans"></div></div>
   </section>
 
   <!-- נקודות -->
   <section id="tab-points" class="tab">
-    <div class="card">
+    <div class="card"><div class="bar" style="justify-content:space-between"><h2 id="ptsH" style="margin:0">כל הנקודות</h2><button class="btn" id="btnNew2">+ נקודה חדשה</button></div>
+      <p class="mut">כדי להפסיק נקודה, בטל את הסימון "פעיל" (ההיסטוריה שלה נשמרת). אפשר לערוך גם ישירות בגיליון.</p>
+      <div id="tblPoints"></div></div>
+    <div class="card" id="pointCard">
       <h2 id="formTitle">נקודה חדשה</h2>
       <p class="mut hide" id="roNote" style="margin-top:-6px"><span class="ro">צפייה בלבד</span> הנקודה שייכת לאתר שלא באחריותך. אפשר לצפות ולקחת השראה.</p>
       <fieldset id="pointFs">
@@ -214,9 +244,6 @@
       <div class="mut" style="margin:12px 0 6px">אתרים</div><div class="colors" id="clrSites"></div>
       <div class="bar" style="margin-top:12px"><button class="btn" id="btnColors">שמור צבעים</button><span class="mut" id="clrMsg"></span></div>
     </div>
-    <div class="card"><h2>כל הנקודות</h2>
-      <p class="mut">כדי להפסיק נקודה, בטל את הסימון "פעיל" (ההיסטוריה שלה נשמרת). אפשר לערוך גם ישירות בגיליון.</p>
-      <table id="tblPoints"></table></div>
   </section>
 
   <!-- QR -->
@@ -226,11 +253,11 @@
       <div class="bar">
         <div><label>גודל תווית</label><select id="qrSize" style="width:230px">
           <option value="small">מדבקה 9×7 ס"מ (6 בדף A4)</option><option value="large">גדול 17×13 ס"מ (2 בדף A4)</option></select></div>
-        <button class="btn sec" id="btnAll">בחר הכול</button>
+        <button class="btn sec" id="btnAll">בחר את כל המוצגים</button>
         <button class="btn" id="btnPrint">הדפס / שמור כ-PDF</button>
       </div>
       <div class="printTip">💡 בחלון ההדפסה: <b>הגדרות נוספות ← בטל "כותרות עליונות ותחתונות"</b> (אחרת תודפס כתובת האתר בתחתית הדף), <b>קנה מידה: 100%</b>, ו<b>גרפיקת רקע: מסומן</b> כדי שהצבעים יודפסו. "שמור כ-PDF" נותן קובץ. לכל נקודה יש גם הורדת PNG.</div>
-      <table id="tblQr"></table>
+      <div id="tblQr"></div>
     </div>
     <div class="card"><h2>תצוגה מקדימה</h2><div id="printArea"></div></div>
   </section>
@@ -238,20 +265,20 @@
   <!-- תקלות -->
   <section id="tab-faults" class="tab">
     <div class="card"><h2>תקלות פתוחות</h2>
-      <p class="mut">כל תקלה נשלחת גם במייל לנמעני התקלות (לשונית "הגדרות" בגיליון). תיאור בשפה זרה מתורגם אוטומטית לעברית.</p>
+      <p class="mut">כל תקלה נשלחת מיד במייל למנהלים של האתר שבו היא קרתה (מי שסימן "מקבל מייל על תקלות"). אם לאתר אין מנהל כזה, המייל הולך לכתובת שבשורה "נמעני תקלות" בגיליון ההגדרות. תיאור בשפה זרה מתורגם אוטומטית לעברית.</p>
       <div id="faultsOpen"></div></div>
-    <div class="card"><h2>טופלו לאחרונה</h2><table id="tblFaultsClosed"></table></div>
+    <div class="card"><h2>טופלו</h2><div id="tblFaultsClosed"></div></div>
   </section>
 
   <!-- מכשירים -->
   <section id="tab-devices" class="tab">
     <div class="card"><h2>טלפונים מאושרים</h2>
-      <p class="mut">
+      <div id="tblDevices"></div>
+      <details class="tr"><summary>איך זה עובד?</summary><p class="mut">
         <b>טלפון משותף</b> (בלי עובד קבוע): כל עובד בוחר את שמו בתחילת משמרת, ורואה רק את העובדים של הצוות.<br>
         <b>עובד קבוע</b>: הטלפון נעול עליו ונפתח בשפה שלו (עמודת "שפה" בלשונית "עובדים").<br>
-        טלפון שמשויך לצוות לא יכול לסרוק ברקודים של צוות אחר. טלפון שאבד: בטל את הסימון "פעיל".
-      </p>
-      <div style="overflow-x:auto"><table id="tblDevices"></table></div>
+        טלפון שמשויך לצוות לא יכול לסרוק ברקודים של צוות אחר. טלפון שאבד: לחץ "ערוך" ובטל את הסימון "פעיל".
+      </p></details>
     </div>
   </section>
 
@@ -275,28 +302,31 @@
       </div>
       <div class="bar" style="margin-top:14px"><button class="btn" id="btnMgrSave">שמור מנהל</button><button class="btn sec" id="btnMgrNew">נקה טופס</button><span class="mut" id="mgrMsg"></span></div>
     </div>
-    <div class="card"><h2>כל המנהלים</h2><div style="overflow-x:auto"><table id="tblMgr"></table></div></div>
+    <div class="card"><h2>כל המנהלים</h2><div id="tblMgr"></div></div>
   </section>
 
   <!-- יומן שינויים -->
   <section id="tab-audit" class="tab">
     <div class="card"><h2>יומן שינויים</h2>
       <p class="mut">כל שינוי שנעשה במסך המנהל ובאישור טלפונים: מי, מתי, מה היה לפני ומה אחרי. היומן נשמר גם בלשונית "יומן שינויים" בגיליון.</p>
-      <div class="bar"><input id="auditQ" placeholder="חיפוש (שם מנהל, נקודה, פעולה)" style="max-width:340px"></div>
-      <div style="overflow-x:auto"><table id="tblAudit" class="audit"></table></div></div>
+      <div class="bar"><div><label>מתאריך</label><input type="date" id="auFrom" style="width:170px"></div>
+        <div><label>עד תאריך</label><input type="date" id="auTo" style="width:170px"></div>
+        <button class="btn sec sm" id="auClear">כל התאריכים</button></div>
+      <div id="tblAudit" class="audit"></div></div>
   </section>
 
   <!-- ייצוא -->
   <section id="tab-export" class="tab">
     <div class="card">
-      <h2>ייצוא סריקות ל-Excel</h2>
+      <h2>ייצוא ל-Excel</h2>
       <div class="bar">
         <div><label>מתאריך</label><input type="date" id="exFrom"></div>
         <div><label>עד תאריך</label><input type="date" id="exTo"></div>
-        <button class="btn" id="btnExport">הורד קובץ CSV</button>
+        <button class="btn" id="btnExport">⬇ הורד Excel</button>
         <span class="mut" id="exMsg"></span>
       </div>
-      <p class="mut">הקובץ נפתח ישירות ב-Excel עם תמיכה בעברית.</p>
+      <p class="mut">קובץ Excel מעוצב אחד, כמו בדוח השבועי, לפי האתר והצוות שבחרת למעלה. בקובץ 7 גיליונות: סיכום · לפי עובד · הוחמצו · מוצדקות · תקלות · כל הסריקות · חשודות.<br>
+        טיפ: בכל טבלה במערכת יש גם כפתור "⬇ Excel" שמוריד בדיוק את מה שמוצג בה.</p>
     </div>
   </section>
 </main>
@@ -310,12 +340,6 @@
 const $ = (id) => document.getElementById(id);
 const esc = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const DAYS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
-const RULE_HELP = {
-  'שעות קבועות': 'סריקה בשעות מוגדרות, בתוך טווח של ± הטולרנס (למשל 08:00 ±15 = 07:45–08:15). לא נסרק בטווח = הוחמץ.',
-  'מרווח': 'סריקה כל X שעות בין שעת ההתחלה לסיום, כל אחת בטווח ± הטולרנס. לא נסרק בטווח = הוחמץ.',
-  'כמות בחלון': 'X סריקות בכל יום בתוך טווח שעות (למשל 3 ניקיונות בין 08:00 ל-16:00). סריקה מחוץ לטווח לא נספרת. מתאים למנקים.',
-  'משמרת': 'X סריקות בכל משמרת (המשמרות מוגדרות בלשונית "משמרות"). מתאים לחשמלאים.'
-};
 const SS = {   // sessionStorage עם הגנה (יש דפדפנים שחוסמים אותו)
   get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} },
@@ -335,6 +359,7 @@ function modal(opts) {
     $('mInput').placeholder = (opts.input && opts.input.placeholder) || '';
     $('mOk').textContent = opts.ok || 'אישור';
     $('mCancel').style.display = opts.cancel === false ? 'none' : '';
+    $('mCancel').textContent = opts.cancelText || 'ביטול';
     $('modal').classList.add('on');
     if (opts.input) setTimeout(() => $('mInput').focus(), 50);
     const done = (v) => { $('modal').classList.remove('on'); $('mOk').onclick = $('mCancel').onclick = null; res(v); };
@@ -345,7 +370,166 @@ function modal(opts) {
   });
 }
 const notify = (title, html) => modal({ title, html, cancel: false, ok: 'סגור' });
-let data = null, editingId = '';
+let data = null, editingId = '', scopeReady = false;
+
+/* =====================================================================
+ * טבלה כמו Excel: מיון בלחיצה על כותרת, סינון בכל עמודה (▾), חיפוש,
+ * זיכרון הסידור (לכל מנהל, בדפדפן הזה), איפוס, והורדה של מה שמוצג.
+ *   xt(id, { cols:[{k, t, v(r) טקסט, h(r) HTML, s(r) ערך למיון, nf:בלי סינון, x:בלי ייצוא}],
+ *            rows, empty, rc(r) מחלקת שורה, after() אחרי ציור, file שם קובץ })
+ * ===================================================================== */
+const LS = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const XTS = {};      // מצב כל טבלה
+const XTO = {};      // ההגדרות האחרונות של כל טבלה
+const xtKey = (id) => 'xt:' + (me().user || '') + ':' + id;
+function xtState(id) {
+  if (!XTS[id]) { const s = LS.get(xtKey(id)) || {}; XTS[id] = { sort: s.sort || null, f: s.f || {}, q: s.q || '' }; }
+  return XTS[id];
+}
+const xtSave = (id) => { const s = XTS[id]; LS.set(xtKey(id), { sort: s.sort, f: s.f, q: s.q }); };
+const xtVal = (c, r) => String(c.v ? c.v(r) : (r[c.k] == null ? '' : r[c.k]));
+function xtVisible(id) {
+  const o = XTO[id], st = xtState(id);
+  const q = st.q.trim().toLowerCase();
+  let rows = o.rows.filter(r => o.cols.every(c => !st.f[c.k] || st.f[c.k].indexOf(xtVal(c, r)) >= 0) &&
+    (!q || o.cols.some(c => !c.x && xtVal(c, r).toLowerCase().indexOf(q) >= 0)));
+  const sc = st.sort && o.cols.find(c => c.k === st.sort[0]);
+  if (sc) {
+    const sv = (r) => sc.s ? sc.s(r) : xtVal(sc, r);
+    rows = rows.slice().sort((a, b) => { const x = sv(a), y = sv(b);
+      return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'he', { numeric: true })) * st.sort[1]; });
+  }
+  return rows;
+}
+function xt(id, o) {
+  XTO[id] = o;
+  const el = $(id), st = xtState(id);
+  Object.keys(st.f).forEach(k => { if (!o.cols.some(c => c.k === k)) delete st.f[k]; });   // עמודה שכבר לא קיימת
+  el.innerHTML = '<div class="xt-bar"><input type="text" class="xt-q" placeholder="🔍 חיפוש בכל העמודות…" value="' + esc(st.q) + '">' +
+    '<span class="cnt"></span><button class="btn sec sm xt-reset">איפוס</button><button class="btn sec sm xt-dl">⬇ Excel</button></div>' +
+    '<div class="xt-wrap"><table class="xt"><thead><tr>' + o.cols.map(c => '<th data-k="' + esc(c.k) + '"' + (c.x ? ' class="ns"' : '') + '>' + esc(c.t) +
+      (c.x ? '' : '<span class="ar"></span>' + (c.nf ? '' : '<button class="fb" type="button" title="סינון">▾</button>')) + '</th>').join('') +
+    '</tr></thead><tbody></tbody></table></div>';
+  el.querySelector('.xt-q').oninput = (e) => { st.q = e.target.value; xtSave(id); xtBody(id); };
+  el.querySelector('.xt-reset').onclick = () => { st.sort = null; st.f = {}; st.q = ''; xtSave(id); xt(id, o); };
+  el.querySelector('.xt-dl').onclick = () => xtDownload(id);
+  el.querySelectorAll('th[data-k]').forEach(th => {
+    const c = o.cols.find(x => x.k === th.dataset.k); if (c.x) return;
+    th.onclick = (e) => { if (e.target.closest('.fb')) return;
+      st.sort = st.sort && st.sort[0] === c.k ? (st.sort[1] > 0 ? [c.k, -1] : null) : [c.k, 1]; xtSave(id); xtBody(id); };
+    const fb = th.querySelector('.fb'); if (fb) fb.onclick = (e) => { e.stopPropagation(); xtFilter(id, c, fb); };
+  });
+  xtBody(id);
+}
+function xtBody(id) {
+  const o = XTO[id], st = xtState(id), el = $(id);
+  const rows = xtVisible(id);
+  el.querySelector('tbody').innerHTML = rows.length ? rows.map(r => '<tr' + (o.rc ? ' class="' + o.rc(r) + '"' : '') + '>' +
+    o.cols.map(c => '<td>' + (c.h ? c.h(r) : esc(xtVal(c, r))) + '</td>').join('') + '</tr>').join('')
+    : '<tr><td colspan="' + o.cols.length + '" class="mut">' + (o.rows.length ? 'אין תוצאות לסינון הזה' : (o.empty || 'אין נתונים')) + '</td></tr>';
+  const active = Object.keys(st.f).length || st.q || st.sort;
+  el.querySelector('.cnt').textContent = rows.length === o.rows.length ? rows.length + ' שורות' : rows.length + ' מתוך ' + o.rows.length;
+  el.querySelector('.xt-reset').classList.toggle('hide', !active);
+  el.querySelectorAll('th[data-k]').forEach(th => {
+    const ar = th.querySelector('.ar'); if (ar) ar.textContent = st.sort && st.sort[0] === th.dataset.k ? (st.sort[1] > 0 ? '▲' : '▼') : '';
+    const fb = th.querySelector('.fb'); if (fb) fb.classList.toggle('act', !!st.f[th.dataset.k]);
+  });
+  if (o.after) o.after(rows);
+}
+function xtClose() { document.querySelectorAll('.xt-dd').forEach(d => d.remove()); }
+document.addEventListener('click', (e) => { if (!e.target.closest('.xt-dd')) xtClose(); });
+window.addEventListener('scroll', xtClose, true);
+function xtFilter(id, c, btn) {
+  const was = document.querySelector('.xt-dd[data-for="' + id + ':' + c.k + '"]'); xtClose(); if (was) return;
+  const o = XTO[id], st = xtState(id);
+  const vals = [...new Set(o.rows.map(r => xtVal(c, r)))].sort((a, b) => a.localeCompare(b, 'he', { numeric: true }));
+  const sel = new Set(st.f[c.k] || vals);
+  const dd = document.createElement('div'); dd.className = 'xt-dd'; dd.dataset.for = id + ':' + c.k;
+  dd.innerHTML = (vals.length > 10 ? '<input type="text" class="xt-dq" placeholder="חיפוש ערך…">' : '') +
+    '<div class="ops"><a data-a="all">בחר הכול</a><a data-a="none">נקה</a></div><div class="vals">' +
+    vals.map(v => '<label><input type="checkbox" class="chk" value="' + esc(v) + '"' + (sel.has(v) ? ' checked' : '') + '>' + (v === '' ? '<span class="mut">(ריק)</span>' : esc(v)) + '</label>').join('') +
+    '</div><div class="acts"><button class="btn sec sm" data-a="cancel">ביטול</button><button class="btn sm" data-a="ok">אישור</button></div>';
+  document.body.appendChild(dd);
+  const r = btn.getBoundingClientRect();
+  dd.style.top = Math.min(r.bottom + 4, window.innerHeight - dd.offsetHeight - 8) + 'px';
+  dd.style.left = Math.max(8, Math.min(r.right - dd.offsetWidth, window.innerWidth - dd.offsetWidth - 8)) + 'px';
+  const dq = dd.querySelector('.xt-dq');
+  if (dq) dq.oninput = () => dd.querySelectorAll('.vals label').forEach(l => l.classList.toggle('hide', l.textContent.indexOf(dq.value) < 0));
+  dd.onclick = (e) => {
+    e.stopPropagation();
+    const a = e.target.dataset.a; if (!a) return;
+    if (a === 'all' || a === 'none') dd.querySelectorAll('.vals label:not(.hide) input').forEach(x => x.checked = a === 'all');
+    if (a === 'cancel') xtClose();
+    if (a === 'ok') {
+      const chosen = [...dd.querySelectorAll('.vals input:checked')].map(x => x.value);
+      if (chosen.length === vals.length) delete st.f[c.k]; else st.f[c.k] = chosen;
+      xtSave(id); xtClose(); xtBody(id);
+    }
+  };
+}
+function xtDownload(id) {
+  const o = XTO[id], cols = o.cols.filter(c => !c.x), rows = xtVisible(id);
+  const cell = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const csv = '﻿' + [cols.map(c => c.t)].concat(rows.map(r => cols.map(c => xtVal(c, r)))).map(r => r.map(cell).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = (o.file || 'טבלה') + ' ' + (data && data.today || '') + '.csv'; a.click();
+}
+
+/* ---------- סינון אתר/צוות למעלה (משותף ללשוניות) ---------- */
+// כל מנהל רואה בכניסה את האתרים שלו (מנהל-על: הכול). הבחירה נשמרת.
+const SCOPE_TABS = ['dash', 'points', 'qr', 'faults', 'devices', 'export'];
+let scope = { site: '', team: '' };
+function initScope() {
+  const saved = LS.get('scope:' + me().user);
+  const mine = (me().sites || []).length && !me().isSuper;
+  scope = saved || { site: mine ? '*mine' : '', team: '' };
+  const sites = data.sites || [];
+  $('scSite').innerHTML = (mine ? '<option value="*mine">האתרים שלי (' + esc(me().sites.join(', ')) + ')</option>' : '') +
+    '<option value="">כל האתרים</option>' + sites.map(x => '<option value="' + esc(x) + '">' + esc(x) + '</option>').join('');
+  $('scTeam').innerHTML = '<option value="">כל הצוותים</option>' + (data.teams || []).map(x => '<option value="' + esc(x) + '">' + esc(x) + '</option>').join('');
+  if (![...$('scSite').options].some(op => op.value === scope.site)) scope.site = mine ? '*mine' : '';
+  if (![...$('scTeam').options].some(op => op.value === scope.team)) scope.team = '';
+  $('scSite').value = scope.site; $('scTeam').value = scope.team;
+  scopeLook();
+}
+function scopeLook() {
+  $('scSite').classList.toggle('on', scope.site !== '' && scope.site !== '*mine');
+  $('scTeam').classList.toggle('on', !!scope.team);
+}
+function inScope(site, team) {
+  site = String(site || ''); team = String(team || '');
+  if (scope.site === '*mine' && (me().sites || []).indexOf(site) < 0) return false;
+  if (scope.site && scope.site !== '*mine' && site !== scope.site) return false;
+  if (scope.team && team !== scope.team) return false;
+  return true;
+}
+$('scSite').onchange = $('scTeam').onchange = () => {
+  scope = { site: $('scSite').value, team: $('scTeam').value }; LS.set('scope:' + me().user, scope); scopeLook();
+  const tab = (document.querySelector('nav button.on') || {}).dataset || {};
+  if (tab.tab === 'dash') renderToday(); if (tab.tab === 'points') renderPoints(); if (tab.tab === 'qr') renderQrList();
+  if (tab.tab === 'faults') renderFaults(); if (tab.tab === 'devices') renderDevices();
+};
+function showScope(tab) { $('scope').classList.toggle('hide', SCOPE_TABS.indexOf(tab) < 0); }
+
+/* ---------- שינויים שלא נשמרו ---------- */
+const DIRTY = { point: false, mgr: false, colors: false };
+const DIRTY_NAME = { point: 'בטופס הנקודה', mgr: 'בטופס המנהל', colors: 'בצבעים' };
+const DIRTY_SAVE = { point: 'btnSave', mgr: 'btnMgrSave', colors: 'btnColors' };
+/** מחזיר true אם אפשר להמשיך (אין שינויים, או שבחרו לצאת בלי לשמור) */
+async function guardDirty(only) {
+  const keys = Object.keys(DIRTY).filter(k => DIRTY[k] && (!only || only === k));
+  if (!keys.length) return true;
+  const r = await modal({ title: 'יש שינויים שלא נשמרו', html: 'שינית ' + keys.map(k => DIRTY_NAME[k]).join(' ו') + ' ולא שמרת. מה לעשות?',
+    ok: 'שמור', cancelText: 'המשך בלי לשמור' });
+  if (r) { $(DIRTY_SAVE[keys[0]]).click(); return false; }
+  keys.forEach(k => DIRTY[k] = false);
+  return true;
+}
+window.addEventListener('beforeunload', (e) => { if (Object.keys(DIRTY).some(k => DIRTY[k])) { e.preventDefault(); e.returnValue = ''; } });
 
 async function api(action, body = {}) {
   const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, token, ...body }) });
@@ -374,11 +558,14 @@ async function start() {
   await loadData();
   loadToday();
 }
-$('btnLogout').onclick = () => { SS.del('adm'); token = null; location.reload(); };
+$('btnLogout').onclick = async () => { if (!await guardDirty()) return; Object.keys(DIRTY).forEach(k => DIRTY[k] = false); SS.del('adm'); token = null; location.reload(); };
 const me = () => (data && data.me) || {};
 
 /* ---------- טאבים ---------- */
-document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+document.querySelectorAll('nav button').forEach(b => b.onclick = async () => {
+  if (!b.classList.contains('on') && !await guardDirty()) return;
+  xtClose();
+  showScope(b.dataset.tab);
   document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id === 'tab-' + b.dataset.tab));
   if (b.dataset.tab === 'dash') loadToday();
@@ -405,8 +592,10 @@ async function loadData() {
   $('teams').innerHTML = [...new Set(data.employees.map(e => e['צוות']).concat(data.points.map(p => p['צוות'])))]
     .filter(Boolean).map(t => '<option value="' + esc(t) + '">').join('');
 
+  if (!scopeReady) { initScope(); showScope('dash'); scopeReady = true; }
   renderPoints();
-  renderColors();
+  if (!DIRTY.colors) renderColors();
+  if (!editingId && !$('f_from').value) $('f_from').value = data.today || '';
   renderSched();
   $('faultBadge').textContent = data.openFaults || '';
 }
@@ -440,22 +629,30 @@ function renderColors() {
   $('clrTeams').innerHTML = teams.map(t => row('teams', t, teamClr(t))).join('') || '<span class="mut">אין צוותים</span>';
   $('clrSites').innerHTML = sites.map(s => row('sites', s, siteClr(s))).join('') || '<span class="mut">אין אתרים</span>';
 }
+$('colorsCard').addEventListener('input', () => DIRTY.colors = true);
 $('btnColors').onclick = async () => {
   const colors = { teams: {}, sites: {} };
   document.querySelectorAll('.colors input[type=color]').forEach(i => colors[i.dataset.kind][i.dataset.name] = i.value);
   $('clrMsg').textContent = 'שומר…';
-  try { data.colors = await api('admin.saveColors', { colors }); renderPoints(); $('clrMsg').textContent = 'נשמר ✓'; }
+  try { data.colors = await api('admin.saveColors', { colors }); DIRTY.colors = false; renderPoints(); $('clrMsg').textContent = 'נשמר ✓'; }
   catch (e) { $('clrMsg').textContent = e.message; }
 };
 
 function renderPoints() {
-  const pts = data.points.slice().sort((a, b) => String(a['קוד אתר']).localeCompare(b['קוד אתר']) || (parseInt(a['מספר']) || 0) - (parseInt(b['מספר']) || 0));
-  $('tblPoints').innerHTML = '<tr><th>מס\'</th><th>שם</th><th>אתר</th><th>קומה</th><th>צוות</th><th>כלל</th><th>ימים</th><th>פעיל</th><th></th></tr>' +
-    pts.map(p => '<tr><td><b>' + esc(p['מספר']) + '</b> <span class="mut">' + esc(p.PointID) + '</span></td><td>' + esc(p['שם נקודה']) + '</td><td>' + siteChip(p['קוד אתר']) +
-      '</td><td>' + esc(p['קומה']) + '</td><td>' + teamChip(p['צוות']) +
-      '</td><td>' + esc(ruleText(p)) + '</td><td>' + esc(p['ימים'] || 'כל יום') + '</td><td>' + (isOn(p['פעיל']) ? '✓' : '—') +
-      '</td><td><button class="btn sec sm" data-edit="' + esc(p.PointID) + '">' + (p._canEdit ? 'ערוך' : 'צפייה') + '</button></td></tr>').join('');
-  document.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => editPoint(b.dataset.edit));
+  const pts = data.points.filter(p => inScope(p['קוד אתר'], p['צוות']));
+  $('ptsH').textContent = 'כל הנקודות (' + pts.length + (pts.length !== data.points.length ? ' מתוך ' + data.points.length : '') + ')';
+  xt('tblPoints', { file: 'נקודות', rows: pts, empty: 'עדיין אין נקודות באתר/צוות שבחרת. לחץ "+ נקודה חדשה".',
+    cols: [
+      { k: 'num', t: "מס'", v: p => p['מספר'], s: p => parseInt(p['מספר']) || 0, nf: true, h: p => '<b>' + esc(p['מספר']) + '</b> <span class="mut">' + esc(p.PointID) + '</span>' },
+      { k: 'name', t: 'שם', v: p => p['שם נקודה'], nf: true },
+      { k: 'site', t: 'אתר', v: p => p['קוד אתר'], h: p => siteChip(p['קוד אתר']) },
+      { k: 'floor', t: 'קומה', v: p => p['קומה'] },
+      { k: 'team', t: 'צוות', v: p => p['צוות'], h: p => teamChip(p['צוות']) },
+      { k: 'rule', t: 'כלל', v: p => ruleText(p), nf: true },
+      { k: 'days', t: 'ימים', v: p => p['ימים'] || 'כל יום' },
+      { k: 'act', t: 'פעיל', v: p => isOn(p['פעיל']) ? 'פעיל' : 'לא פעיל', h: p => isOn(p['פעיל']) ? '✓' : '—' },
+      { k: 'btn', t: '', x: true, h: p => '<button class="btn sec sm" data-edit="' + esc(p.PointID) + '">' + (p._canEdit ? 'ערוך' : 'צפייה') + '</button>' }],
+    after: () => document.querySelectorAll('#tblPoints [data-edit]').forEach(b => b.onclick = () => editPoint(b.dataset.edit)) });
 }
 
 /* ---------- טופס נקודה: תזמון בקוביות ---------- */
@@ -546,6 +743,7 @@ document.querySelector('.sched').addEventListener('click', (e) => {
     }
   }
   else return;
+  DIRTY.point = true;
   renderSched();
 });
 // חשמל: הצעה אוטומטית "פעם אחת בכל משמרת" (רק לנקודה חדשה שעוד לא נבחר לה תזמון)
@@ -581,7 +779,7 @@ function schedFromPoint(p) {
 }
 
 function clearForm() {
-  editingId = '';
+  editingId = ''; DIRTY.point = false;
   ['f_name', 'f_num', 'f_site', 'f_floor', 'f_desc', 'f_team', 'f_gap']
     .concat(Object.keys(NAME_COLS).map(k => 'f_n_' + k)).forEach(id => { if ($(id)) $(id).value = ''; });
   $('f_site').value = (!me().isSuper && (me().sites || [])[0]) || '';
@@ -593,7 +791,11 @@ function clearForm() {
   $('saveMsg').textContent = '';
   renderSched();
 }
-$('btnNew').onclick = clearForm;
+const toForm = () => $('pointCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+$('btnNew').onclick = async () => { if (await guardDirty('point')) clearForm(); };
+$('btnNew2').onclick = async () => { if (!await guardDirty('point')) return; clearForm(); toForm(); };
+$('pointCard').addEventListener('input', () => { if (!$('pointFs').disabled) DIRTY.point = true; });
+$('pointCard').addEventListener('change', () => { if (!$('pointFs').disabled) DIRTY.point = true; });
 
 // צפייה בלבד: הטופס נעול וכפתור השמירה מוסתר
 function setReadOnly(ro) {
@@ -606,9 +808,10 @@ const toDateInput = (s) => { s = String(s || ''); let m = s.match(/^(\d{4})-(\d{
   m = s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})/); return m ? m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : ''; };
 const toTimeInput = (s) => { const m = String(s || '').match(/^(\d{1,2}):(\d{2})/); return m ? m[1].padStart(2, '0') + ':' + m[2] : ''; };
 
-function editPoint(id) {
+async function editPoint(id) {
   const p = data.points.find(x => x.PointID === id); if (!p) return;
-  editingId = id;
+  if (id !== editingId && !await guardDirty('point')) return;
+  editingId = id; DIRTY.point = false;
   $('f_name').value = p['שם נקודה']; $('f_site').value = p['קוד אתר']; $('f_desc').value = p['תיאור'];
   $('f_num').value = p['מספר'] || ''; $('f_floor').value = p['קומה'] || '';
   $('f_team').value = p['צוות'];
@@ -620,7 +823,7 @@ function editPoint(id) {
   $('formTitle').textContent = (p._canEdit ? 'עריכת נקודה ' : 'צפייה בנקודה ') + (p['מספר'] || '') + ' · ' + p['שם נקודה'];
   setReadOnly(!p._canEdit);
   renderSched();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  toForm();
 }
 
 $('btnSave').onclick = async () => {
@@ -647,6 +850,9 @@ $('btnSave').onclick = async () => {
   Object.keys(NAME_COLS).forEach(k => pt[NAME_COLS[k]] = $('f_n_' + k).value.trim());
   const err = !pt['שם נקודה'] ? 'חסר שם נקודה' : !pt['קוד אתר'] ? 'חסר אתר' : !sum.ok ? sum.text.replace('⚠ ', '') : '';
   if (err) { $('saveMsg').textContent = err; return; }
+  // אזהרה: אותו מספר כבר קיים באותו אתר (על התווית יופיעו שני מספרים זהים)
+  const dup = pt['מספר'] && data.points.find(x => x.PointID !== editingId && String(x['מספר']).trim() === pt['מספר'] && x['קוד אתר'] === pt['קוד אתר']);
+  if (dup && !await modal({ title: 'מספר כפול', html: 'המספר <b>' + esc(pt['מספר']) + '</b> כבר קיים באתר ' + esc(pt['קוד אתר']) + ': ' + esc(dup['שם נקודה']) + '.<br>על התוויות יופיעו שני מספרים זהים. לשמור בכל זאת?', ok: 'שמור בכל זאת' })) return;
   $('saveMsg').textContent = 'שומר…';
   try {
     const r = await api('admin.savePoint', { point: pt });
@@ -658,39 +864,58 @@ $('btnSave').onclick = async () => {
 
 /* ---------- דשבורד ---------- */
 let dashTimer = null;
+let lastToday = null;
 async function loadToday() {
   clearTimeout(dashTimer);
   try {
     const t = await api('admin.today', { date: $('dashDate').value || '' });
+    lastToday = t;
     $('dashDate').value = t.date; $('dashDate').max = t.now.slice(0, 10);
     $('dashTime').textContent = t.isToday ? 'עודכן: ' + t.now + ' · מתרענן כל 30 שניות' : '';
     $('dashH').textContent = t.isToday ? 'מצב הנקודות היום' : 'מצב הנקודות ב-' + t.date;
     $('scansH').textContent = t.isToday ? 'סריקות אחרונות היום' : 'סריקות ב-' + t.date;
     dashIsToday = t.isToday;
     data.colors = t.colors || data.colors;
-    const sum = t.points.reduce((a, p) => { ['required', 'on', 'missed', 'excused', 'suspect'].forEach(k => a[k] += p[k]); return a; },
-      { required: 0, on: 0, missed: 0, excused: 0, suspect: 0 });
-    const pct = sum.required ? Math.round(sum.on / sum.required * 100) + '%' : '—';
     $('faultBadge').textContent = t.openFaults || '';
     todayPoints = t.points;
-    $('kpis').innerHTML = [[t.isToday ? 'עמידה היום' : 'עמידה ביום הזה', pct], ['בוצעו בזמן', sum.on], ['הוחמצו', sum.missed], ['מוצדקות', sum.excused],
-      ['תקלות פתוחות', t.openFaults || 0], ['חשודות', sum.suspect], ['סריקות היום', t.scans.length]]
-      .map(k => '<div class="kpi"><b>' + k[1] + '</b><span>' + k[0] + '</span></div>').join('');
-    t.points.sort((a, b) => String(a.site).localeCompare(b.site) || String(a.team).localeCompare(b.team));
-    $('tblToday').innerHTML = '<tr><th>אתר</th><th>צוות</th><th>נקודה</th><th>כלל</th><th>נדרש עד עכשיו</th><th>בוצעו</th><th>הוחמצו</th><th>מוצדקות</th><th>סריקה אחרונה</th></tr>' +
-      t.points.map(p => '<tr class="' + (p.missed ? 'row-err' : p.required ? 'row-ok' : '') + '"><td>' + siteChip(p.site) + '</td><td>' + teamChip(p.team) +
-        '</td><td>' + esc(p.name) + '</td><td>' + esc(p.rule) + '</td><td>' + p.required + '</td><td>' + p.on +
-        '</td><td>' + (p.missedList.length ? '<button class="linkbtn" data-miss="' + esc(p.id) + '">' + p.missed + ' ▸</button>' : p.missed) +
-        '</td><td>' + (p.excused || '') + '</td><td>' + esc(String(p.last).slice(11)) + '</td></tr>').join('');
-    document.querySelectorAll('[data-miss]').forEach(b => b.onclick = () => showMisses(b.dataset.miss));
-    const pill = (s) => '<span class="pill ' + (s === 'בזמן' ? 'p-ok' : s === 'כפול' ? 'p-warn' : 'p-err') + '">' + esc(s) + '</span>';
-    $('tblScans').innerHTML = '<tr><th>שעה</th><th>צוות</th><th>נקודה</th><th>עובד</th><th>סטטוס</th><th>סטייה</th><th>הערות</th></tr>' +
-      (t.scans.length ? t.scans.map(s => '<tr><td>' + esc(s.time.slice(11)) + '</td><td>' + teamChip(s.team) + '</td><td>' + esc(s.point) + '</td><td>' + esc(s.emp) +
-        '</td><td>' + pill(s.status) + (s.suspect ? ' <span class="pill p-sus" title="' + esc(s.suspect) + '">חשד</span>' : '') +
-        '</td><td>' + (s.dev !== '' ? esc(s.dev) + "'" : '') + '</td><td class="mut">' + esc([s.note, s.suspect].filter(Boolean).join(' · ')) + '</td></tr>').join('')
-        : '<tr><td colspan="7" class="mut">אין סריקות</td></tr>');
+    renderToday();
   } catch (e) { $('dashTime').textContent = 'שגיאה: ' + e.message; }
   if ($('tab-dash').classList.contains('on') && dashIsToday) dashTimer = setTimeout(loadToday, 30000);
+}
+function renderToday() {
+  const t = lastToday; if (!t) return;
+  const pts = t.points.filter(p => inScope(p.site, p.team));
+  const scans = t.scans.filter(x => inScope(x.site, x.team));
+  const sum = pts.reduce((a, p) => { ['required', 'on', 'missed', 'excused', 'suspect'].forEach(k => a[k] += p[k]); return a; },
+    { required: 0, on: 0, missed: 0, excused: 0, suspect: 0 });
+  const pct = sum.required ? Math.round(sum.on / sum.required * 100) + '%' : '—';
+  $('kpis').innerHTML = [[t.isToday ? 'עמידה היום' : 'עמידה ביום הזה', pct], ['בוצעו בזמן', sum.on], ['הוחמצו', sum.missed], ['מוצדקות', sum.excused],
+    ['תקלות פתוחות', t.openFaults || 0], ['חשודות', sum.suspect], ['סריקות', scans.length]]
+    .map(k => '<div class="kpi"><b>' + k[1] + '</b><span>' + k[0] + '</span></div>').join('');
+  xt('tblToday', { file: 'מצב נקודות ' + t.date, rows: pts, empty: 'אין נקודות באתר/צוות שבחרת',
+    rc: p => p.missed ? 'row-err' : p.required ? 'row-ok' : '',
+    cols: [
+      { k: 'site', t: 'אתר', v: p => p.site, h: p => siteChip(p.site) },
+      { k: 'team', t: 'צוות', v: p => p.team, h: p => teamChip(p.team) },
+      { k: 'name', t: 'נקודה', v: p => (p.num ? p.num + ' · ' : '') + p.name, nf: true },
+      { k: 'rule', t: 'כלל', v: p => p.rule },
+      { k: 'req', t: 'נדרש עד עכשיו', v: p => p.required, s: p => p.required, nf: true },
+      { k: 'on', t: 'בוצעו', v: p => p.on, s: p => p.on, nf: true },
+      { k: 'miss', t: 'הוחמצו', v: p => p.missed, s: p => p.missed,
+        h: p => p.missedList.length ? '<button class="linkbtn" data-miss="' + esc(p.id) + '">' + p.missed + ' ▸</button>' : String(p.missed) },
+      { k: 'ex', t: 'מוצדקות', v: p => p.excused || '', s: p => p.excused, nf: true },
+      { k: 'last', t: 'סריקה אחרונה', v: p => String(p.last).slice(11), nf: true }],
+    after: () => document.querySelectorAll('#tblToday [data-miss]').forEach(b => b.onclick = () => showMisses(b.dataset.miss)) });
+  const pill = (st) => '<span class="pill ' + (st === 'בזמן' ? 'p-ok' : st === 'כפול' ? 'p-warn' : 'p-err') + '">' + esc(st) + '</span>';
+  xt('tblScans', { file: 'סריקות ' + t.date, rows: scans, empty: 'אין סריקות',
+    cols: [
+      { k: 'time', t: 'שעה', v: x => x.time.slice(11), nf: true },
+      { k: 'team', t: 'צוות', v: x => x.team, h: x => teamChip(x.team) },
+      { k: 'point', t: 'נקודה', v: x => x.point },
+      { k: 'emp', t: 'עובד', v: x => x.emp },
+      { k: 'status', t: 'סטטוס', v: x => x.status, h: x => pill(x.status) + (x.suspect ? ' <span class="pill p-sus" title="' + esc(x.suspect) + '">חשד</span>' : '') },
+      { k: 'dev', t: 'סטייה', v: x => x.dev !== '' ? x.dev + "'" : '', nf: true },
+      { k: 'note', t: 'הערות', v: x => [x.note, x.suspect].filter(Boolean).join(' · '), nf: true, h: x => '<span class="mut">' + esc([x.note, x.suspect].filter(Boolean).join(' · ')) + '</span>' }] });
 }
 let dashIsToday = true;
 const shiftDate = (n) => { const d = new Date(($('dashDate').value || new Date().toISOString().slice(0, 10)) + 'T12:00:00');
@@ -734,64 +959,85 @@ function showMisses(pointId) {
 }
 
 /* ---------- תקלות ---------- */
+let lastFaults = null;
 async function loadFaults() {
   $('faultsOpen').innerHTML = '<p class="mut">טוען…</p>';
   try {
-    const f = await api('admin.faults');
-    data.colors = f.colors || data.colors;
-    $('faultBadge').textContent = f.open.length || '';
-    $('faultsOpen').innerHTML = f.open.length ? f.open.map(x => '<div class="fault"><div>' + teamChip(x.team) + ' ' + siteChip(x.site) +
-      ' <b>' + esc(x.point) + '</b> <span class="mut">· ' + esc(x.emp) + ' · ' + esc(x.time) + '</span></div>' +
-      '<div class="tr">' + esc(x.translated || x.text || '(ללא תיאור)') + '</div>' +
-      (x.translated ? '<div class="orig">מקור (' + esc(x.lang) + '): <span dir="auto">' + esc(x.text) + '</span></div>' : '') +
-      (/^https?:/.test(x.photo) ? '<a href="' + esc(x.photo) + '" target="_blank" rel="noopener">📷 פתח תמונה</a>' : (x.photo ? '<div class="mut">' + esc(x.photo) + '</div>' : '')) +
-      '<div style="margin-top:10px">' + (x.canEdit ? '<button class="btn sm" data-close="' + esc(x.id) + '">סמן כטופל…</button>' : '<span class="ro">צפייה בלבד</span>') + '</div></div>').join('')
-      : '<p class="mut">אין תקלות פתוחות 👍</p>';
-    document.querySelectorAll('[data-close]').forEach(b => b.onclick = async () => {
-      const note = await modal({ title: 'סימון תקלה כטופלה', html: 'מה נעשה? (לא חובה)', input: { placeholder: 'למשל: הוחלפה נורה' }, ok: 'סמן כטופל' });
-      if (note === null) return;
-      try { await api('admin.closeFault', { id: b.dataset.close, note }); loadFaults(); } catch (e) { notify('שגיאה', esc(e.message)); }
-    });
-    $('tblFaultsClosed').innerHTML = '<tr><th>זמן</th><th>צוות</th><th>נקודה</th><th>עובד</th><th>תיאור</th><th>טופל</th><th>הערת טיפול</th></tr>' +
-      (f.closed.length ? f.closed.map(x => '<tr><td>' + esc(x.time) + '</td><td>' + teamChip(x.team) + '</td><td>' + esc(x.point) + '</td><td>' + esc(x.emp) +
-        '</td><td>' + esc(x.translated || x.text) + '</td><td>' + esc(x.doneAt) + '</td><td>' + esc(x.note) + '</td></tr>').join('')
-        : '<tr><td colspan="7" class="mut">עדיין אין</td></tr>');
+    lastFaults = await api('admin.faults');
+    data.colors = lastFaults.colors || data.colors;
+    $('faultBadge').textContent = lastFaults.open.length || '';
+    renderFaults();
   } catch (e) { $('faultsOpen').innerHTML = '<p class="mut">שגיאה: ' + esc(e.message) + '</p>'; }
+}
+function renderFaults() {
+  const f = lastFaults; if (!f) return;
+  const open = f.open.filter(x => inScope(x.site, x.team)), closed = f.closed.filter(x => inScope(x.site, x.team));
+  const hidden = f.open.length - open.length;
+  $('faultsOpen').innerHTML = (open.length ? open.map(x => '<div class="fault"><div>' + teamChip(x.team) + ' ' + siteChip(x.site) +
+    ' <b>' + esc(x.point) + '</b> <span class="mut">· ' + esc(x.emp) + ' · ' + esc(x.time) + '</span></div>' +
+    '<div class="tr">' + esc(x.translated || x.text || '(ללא תיאור)') + '</div>' +
+    (x.translated ? '<div class="orig">מקור (' + esc(x.lang) + '): <span dir="auto">' + esc(x.text) + '</span></div>' : '') +
+    (/^https?:/.test(x.photo) ? '<a href="' + esc(x.photo) + '" target="_blank" rel="noopener">📷 פתח תמונה</a>' : (x.photo ? '<div class="mut">' + esc(x.photo) + '</div>' : '')) +
+    '<div style="margin-top:10px">' + (x.canEdit ? '<button class="btn sm" data-close="' + esc(x.id) + '">סמן כטופל…</button>' : '<span class="ro">צפייה בלבד</span>') + '</div></div>').join('')
+    : '<p class="mut">אין תקלות פתוחות באתר/צוות שבחרת 👍</p>') +
+    (hidden ? '<p class="mut">יש עוד ' + hidden + ' תקלות פתוחות באתרים/צוותים אחרים (שנה את הבחירה למעלה כדי לראות).</p>' : '');
+  document.querySelectorAll('[data-close]').forEach(b => b.onclick = async () => {
+    const note = await modal({ title: 'סימון תקלה כטופלה', html: 'מה נעשה? (לא חובה)', input: { placeholder: 'למשל: הוחלפה נורה' }, ok: 'סמן כטופל' });
+    if (note === null) return;
+    try { await api('admin.closeFault', { id: b.dataset.close, note }); loadFaults(); } catch (e) { notify('שגיאה', esc(e.message)); }
+  });
+  xt('tblFaultsClosed', { file: 'תקלות שטופלו', rows: closed, empty: 'עדיין אין',
+    cols: [
+      { k: 'time', t: 'זמן', v: x => x.time, nf: true },
+      { k: 'site', t: 'אתר', v: x => x.site, h: x => siteChip(x.site) },
+      { k: 'team', t: 'צוות', v: x => x.team, h: x => teamChip(x.team) },
+      { k: 'point', t: 'נקודה', v: x => x.point },
+      { k: 'emp', t: 'דיווח', v: x => x.emp },
+      { k: 'text', t: 'תיאור', v: x => x.translated || x.text, nf: true },
+      { k: 'done', t: 'טופל', v: x => x.doneAt, nf: true },
+      { k: 'note', t: 'הערת טיפול', v: x => x.note, nf: true }] });
 }
 
 /* ---------- מכשירים ---------- */
 function renderDevices() {
-  const teams = data.teams || [];
+  const devs = data.devices.filter(d => inScope(d['אתר'], d['צוות']));
+  xt('tblDevices', { file: 'טלפונים', rows: devs,
+    empty: 'אין טלפונים באתר/צוות שבחרת. טלפון חדש: פותחים את האפליקציה בטלפון ומאשרים עם שם המשתמש והסיסמה שלך.',
+    rc: d => isOn(d['פעיל']) ? '' : 'row-ex',
+    cols: [
+      { k: 'name', t: 'שם המכשיר', v: d => d['שם מכשיר'], nf: true },
+      { k: 'site', t: 'אתר', v: d => d['אתר'], h: d => siteChip(d['אתר']) },
+      { k: 'team', t: 'צוות', v: d => d['צוות'] || 'כל הצוותים', h: d => d['צוות'] ? teamChip(d['צוות']) : '<span class="mut">כל הצוותים</span>' },
+      { k: 'emp', t: 'עובד קבוע', v: d => d['עובד קבוע'] || 'טלפון משותף', h: d => d['עובד קבוע'] ? esc(d['עובד קבוע']) : '<span class="mut">טלפון משותף</span>' },
+      { k: 'act', t: 'פעיל', v: d => isOn(d['פעיל']) ? 'פעיל' : 'חסום', h: d => isOn(d['פעיל']) ? '✓' : '<span class="pill p-err">חסום</span>' },
+      { k: 'seen', t: 'סריקה אחרונה', v: d => d.lastSeen || '', nf: true, h: d => '<span class="mut">' + esc(d.lastSeen || '—') + '</span>' },
+      { k: 'ok', t: 'אושר', v: d => String(d['תאריך אישור']).slice(0, 10) + (d['אושר על ידי'] ? ' · ' + d['אושר על ידי'] : ''), nf: true,
+        h: d => '<span class="mut">' + esc(String(d['תאריך אישור']).slice(0, 10)) + (d['אושר על ידי'] ? '<br>' + esc(d['אושר על ידי']) : '') + '</span>' },
+      { k: 'btn', t: '', x: true, h: d => d._canEdit ? '<button class="btn sec sm" data-dedit="' + esc(d.DeviceID) + '">ערוך</button>' : '<span class="ro">צפייה בלבד</span>' }],
+    after: () => document.querySelectorAll('#tblDevices [data-dedit]').forEach(b => b.onclick = () => editDevice(b.dataset.dedit)) });
+}
+/** עריכת טלפון בחלון: שם, אתר, צוות, עובד קבוע, פעיל */
+async function editDevice(id) {
+  const d = data.devices.find(x => x.DeviceID === id); if (!d) return;
   const emps = data.employees.filter(e => isOn(e['פעיל']));
   const empOpts = (team, cur) => '<option value="">— טלפון משותף —</option>' + emps.filter(e => !team || e['צוות'] === team)
     .map(e => '<option' + (e['שם'] === cur ? ' selected' : '') + ' value="' + esc(e['שם']) + '">' + esc(e['שם']) + (e['שפה'] && e['שפה'] !== 'עברית' ? ' (' + esc(e['שפה']) + ')' : '') + '</option>').join('');
-  const siteOpts = (cur, ro) => (ro ? [cur] : [...new Set([cur].concat(data.editSites || []))]).filter(x => x !== undefined)
-    .map(x => '<option' + (x === cur ? ' selected' : '') + ' value="' + esc(x) + '">' + esc(x || '— ללא —') + '</option>').join('');
-  const devs = data.devices.slice().sort((a, b) => (b._canEdit - a._canEdit) || String(a['אתר']).localeCompare(b['אתר']));
-  $('tblDevices').innerHTML = '<tr><th>שם המכשיר</th><th>אתר</th><th>צוות</th><th>עובד קבוע</th><th>פעיל</th><th>סריקה אחרונה</th><th>אושר</th><th></th></tr>' +
-    (devs.length ? devs.map(d => { const ro = !d._canEdit, dis = ro ? ' disabled' : '';
-      return '<tr data-dev="' + esc(d.DeviceID) + '"' + (ro ? ' style="color:var(--mut)"' : '') + '><td><input class="dName" value="' + esc(d['שם מכשיר']) + '"' + dis + '></td>' +
-      '<td><select class="dSite"' + dis + '>' + siteOpts(d['אתר'] || '', ro) + '</select></td>' +
-      '<td><select class="dTeam"' + dis + '><option value="">— כל הצוותים —</option>' + teams.map(x => '<option' + (x === d['צוות'] ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select></td>' +
-      '<td><select class="dEmp"' + dis + '>' + empOpts(d['צוות'], d['עובד קבוע']) + '</select></td>' +
-      '<td><input type="checkbox" class="chk dAct"' + (isOn(d['פעיל']) ? ' checked' : '') + dis + '></td>' +
-      '<td class="mut">' + esc(d.lastSeen || '—') + '</td><td class="mut">' + esc(String(d['תאריך אישור']).slice(0, 10)) +
-      (d['אושר על ידי'] ? '<br>' + esc(d['אושר על ידי']) : '') + '</td>' +
-      '<td>' + (ro ? '<span class="ro">צפייה בלבד</span>' : '<button class="btn sm dSave">שמור</button> <span class="mut dMsg"></span>') + '</td></tr>'; }).join('')
-      : '<tr><td colspan="8" class="mut">עדיין לא אושרו טלפונים. פותחים את האפליקציה בטלפון ומאשרים עם שם המשתמש והסיסמה שלך.</td></tr>');
-  document.querySelectorAll('[data-dev]').forEach(tr => {
-    const d = data.devices.find(x => x.DeviceID === tr.dataset.dev);
-    if (!d._canEdit) return;
-    tr.querySelector('.dTeam').onchange = (e) => { tr.querySelector('.dEmp').innerHTML = empOpts(e.target.value, ''); };
-    tr.querySelector('.dSave').onclick = async () => {
-      const msg = tr.querySelector('.dMsg'); msg.textContent = 'שומר…';
-      try {
-        await api('admin.saveDevice', { device: { DeviceID: d.DeviceID, 'שם מכשיר': tr.querySelector('.dName').value, 'אתר': tr.querySelector('.dSite').value,
-          'צוות': tr.querySelector('.dTeam').value, 'עובד קבוע': tr.querySelector('.dEmp').value, 'פעיל': tr.querySelector('.dAct').checked } });
-        msg.textContent = 'נשמר ✓';
-      } catch (e) { msg.textContent = e.message; }
-    };
-  });
+  const sites = [...new Set([d['אתר'] || ''].concat(data.editSites || []))];
+  const html = '<div class="grid" style="grid-template-columns:1fr 1fr">' +
+    '<div><label>שם המכשיר</label><input id="dv_name" value="' + esc(d['שם מכשיר']) + '"></div>' +
+    '<div><label>אתר</label><select id="dv_site">' + sites.map(x => '<option' + (x === d['אתר'] ? ' selected' : '') + ' value="' + esc(x) + '">' + esc(x || '— ללא —') + '</option>').join('') + '</select></div>' +
+    '<div><label>צוות</label><select id="dv_team"><option value="">— כל הצוותים —</option>' + (data.teams || []).map(x => '<option' + (x === d['צוות'] ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select></div>' +
+    '<div><label>עובד קבוע</label><select id="dv_emp">' + empOpts(d['צוות'], d['עובד קבוע']) + '</select></div></div>' +
+    '<label style="margin-top:12px;display:flex;align-items:center;color:var(--fg)"><input type="checkbox" class="chk" id="dv_act"' + (isOn(d['פעיל']) ? ' checked' : '') + '>פעיל (בלי סימון = הטלפון חסום ולא יכול לסרוק)</label>' +
+    '<p class="mut" id="dv_msg"></p>';
+  const ok = await modal({ title: 'עריכת טלפון', html, ok: 'שמור', onOpen: () => {
+    $('dv_team').onchange = (e) => { $('dv_emp').innerHTML = empOpts(e.target.value, ''); };
+  } });
+  if (!ok) return;
+  const dev = { DeviceID: d.DeviceID, 'שם מכשיר': $('dv_name').value, 'אתר': $('dv_site').value, 'צוות': $('dv_team').value,
+    'עובד קבוע': $('dv_emp').value, 'פעיל': $('dv_act').checked };
+  try { await api('admin.saveDevice', { device: dev }); await loadData(); renderDevices(); notify('נשמר ✓', 'הטלפון יקבל את השינוי בפעם הבאה שיפתחו בו את האפליקציה (או לחיצה על רענון בדפדפן).'); }
+  catch (e) { notify('לא נשמר', esc(e.message)); }
 }
 
 /* ---------- מנהלים (מנהל-על) ---------- */
@@ -800,26 +1046,32 @@ async function loadManagers() {
   try { mgrData = await api('admin.managers'); } catch (e) { $('tblMgr').innerHTML = '<tr><td class="mut">' + esc(e.message) + '</td></tr>'; return; }
   const allSites = [...new Set((mgrData.sites || []).concat(data.sites || []))].sort();
   $('m_sites').innerHTML = allSites.map(x => '<label><input type="checkbox" class="chk msite" value="' + esc(x) + '">' + esc(x) + '</label>').join('') || '<span class="mut">אין אתרים עדיין</span>';
-  $('tblMgr').innerHTML = '<tr><th>שם משתמש</th><th>שם</th><th>תפקיד</th><th>אתרים (עריכה)</th><th>מייל</th><th>מקבל</th><th>פעיל</th><th></th></tr>' +
-    (mgrData.managers.length ? mgrData.managers.map(m => '<tr' + (m.active ? '' : ' style="color:var(--mut)"') + '><td dir="ltr" style="text-align:right">' + esc(m.user) + '</td><td>' + esc(m.name) +
-      '</td><td>' + (m.role === 'מנהל-על' ? '<b>מנהל-על</b>' : 'מנהל') + '</td><td>' + (m.role === 'מנהל-על' ? 'כולם' : m.sites.map(x => siteChip(x)).join(' ') || '—') +
-      '</td><td dir="ltr" style="text-align:right">' + esc(m.email) + '</td><td>' + [m.weekly ? 'דוח' : '', m.faults ? 'תקלות' : ''].filter(Boolean).join(' + ') +
-      (m.mineOnly ? ' <span class="mut">(רק שלו)</span>' : '') + '</td><td>' + (m.active ? '✓' : '—') +
-      '</td><td><button class="btn sec sm" data-mgr="' + esc(m.user) + '">ערוך</button></td></tr>').join('')
-      : '<tr><td colspan="8" class="mut">עדיין אין מנהלים. צור קודם את עצמך כמנהל-על, ואז היכנס עם המשתמש האישי.</td></tr>');
-  document.querySelectorAll('[data-mgr]').forEach(b => b.onclick = () => editManager(b.dataset.mgr));
+  xt('tblMgr', { file: 'מנהלים', rows: mgrData.managers, empty: 'עדיין אין מנהלים. צור קודם את עצמך כמנהל-על, ואז היכנס עם המשתמש האישי.',
+    rc: m => m.active ? '' : 'row-ex',
+    cols: [
+      { k: 'user', t: 'שם משתמש', v: m => m.user, nf: true, h: m => '<span dir="ltr">' + esc(m.user) + '</span>' },
+      { k: 'name', t: 'שם', v: m => m.name, nf: true },
+      { k: 'role', t: 'תפקיד', v: m => m.role, h: m => m.role === 'מנהל-על' ? '<b>מנהל-על</b>' : 'מנהל' },
+      { k: 'sites', t: 'אתרים (עריכה)', v: m => m.role === 'מנהל-על' ? 'כולם' : m.sites.join(', ') || '—',
+        h: m => m.role === 'מנהל-על' ? 'כולם' : m.sites.map(x => siteChip(x)).join(' ') || '—' },
+      { k: 'email', t: 'מייל', v: m => m.email, nf: true, h: m => '<span dir="ltr">' + esc(m.email) + '</span>' },
+      { k: 'gets', t: 'מקבל', v: m => [m.weekly ? 'דוח' : '', m.faults ? 'תקלות' : ''].filter(Boolean).join(' + ') + (m.mineOnly ? ' (רק שלו)' : '') },
+      { k: 'act', t: 'פעיל', v: m => m.active ? 'פעיל' : 'לא פעיל', h: m => m.active ? '✓' : '—' },
+      { k: 'btn', t: '', x: true, h: m => '<button class="btn sec sm" data-mgr="' + esc(m.user) + '">ערוך</button>' }],
+    after: () => document.querySelectorAll('#tblMgr [data-mgr]').forEach(b => b.onclick = () => editManager(b.dataset.mgr)) });
 }
 function clearManager() {
-  mgrEditing = '';
+  mgrEditing = ''; DIRTY.mgr = false;
   ['m_user', 'm_name', 'm_email', 'm_pw'].forEach(id => $(id).value = '');
   $('m_user').disabled = false; $('m_role').value = 'מנהל';
   ['m_weekly', 'm_faults', 'm_mine'].forEach(id => $(id).checked = false); $('m_active').checked = true;
   document.querySelectorAll('.msite').forEach(c => c.checked = false);
   $('mgrTitle').textContent = 'מנהל חדש'; $('m_pwLbl').textContent = 'סיסמה (לפחות 6 תווים)'; $('mgrMsg').textContent = '';
 }
-function editManager(user) {
+async function editManager(user) {
   const m = mgrData.managers.find(x => x.user === user); if (!m) return;
-  mgrEditing = user;
+  if (user !== mgrEditing && !await guardDirty('mgr')) return;
+  mgrEditing = user; DIRTY.mgr = false;
   $('m_user').value = m.user; $('m_user').disabled = true; $('m_name').value = m.name; $('m_email').value = m.email; $('m_role').value = m.role;
   $('m_weekly').checked = m.weekly; $('m_faults').checked = m.faults; $('m_mine').checked = m.mineOnly; $('m_active').checked = m.active;
   document.querySelectorAll('.msite').forEach(c => c.checked = m.sites.indexOf(c.value) >= 0);
@@ -827,7 +1079,9 @@ function editManager(user) {
   $('mgrTitle').textContent = 'עריכת מנהל ' + m.user; $('mgrMsg').textContent = '';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-$('btnMgrNew').onclick = clearManager;
+$('btnMgrNew').onclick = async () => { if (await guardDirty('mgr')) clearManager(); };
+document.querySelector('#tab-managers .card').addEventListener('input', () => DIRTY.mgr = true);
+document.querySelector('#tab-managers .card').addEventListener('change', () => DIRTY.mgr = true);
 $('btnMgrSave').onclick = async () => {
   const m = { user: $('m_user').value.trim(), name: $('m_name').value.trim(), email: $('m_email').value.trim(), role: $('m_role').value,
     sites: [...document.querySelectorAll('.msite:checked')].map(c => c.value), weekly: $('m_weekly').checked, faults: $('m_faults').checked,
@@ -840,17 +1094,23 @@ $('btnMgrSave').onclick = async () => {
 /* ---------- יומן שינויים ---------- */
 let auditRows = [];
 async function loadAudit() {
-  try { auditRows = (await api('admin.audit', { limit: 500 })).rows; } catch (e) { $('tblAudit').innerHTML = '<tr><td>' + esc(e.message) + '</td></tr>'; return; }
+  try { auditRows = (await api('admin.audit', { limit: 2000 })).rows; } catch (e) { $('tblAudit').innerHTML = '<tr><td>' + esc(e.message) + '</td></tr>'; return; }
   renderAudit();
 }
 function renderAudit() {
-  const q = $('auditQ').value.trim();
-  const rows = auditRows.filter(r => !q || [r.who, r.action, r.item, r.before, r.after].join(' ').indexOf(q) >= 0);
-  $('tblAudit').innerHTML = '<tr><th>זמן</th><th>מנהל</th><th>פעולה</th><th>פריט</th><th>לפני</th><th>אחרי</th></tr>' +
-    (rows.length ? rows.map(r => '<tr><td>' + esc(r.time) + '</td><td>' + esc(r.who) + '</td><td><b>' + esc(r.action) + '</b></td><td>' + esc(r.item) +
-      '</td><td class="mut">' + esc(r.before) + '</td><td>' + esc(r.after) + '</td></tr>').join('') : '<tr><td colspan="6" class="mut">אין רשומות</td></tr>');
+  const f = $('auFrom').value, t = $('auTo').value;
+  const rows = auditRows.filter(r => (!f || r.time.slice(0, 10) >= f) && (!t || r.time.slice(0, 10) <= t));
+  xt('tblAudit', { file: 'יומן שינויים', rows: rows, empty: 'אין רשומות',
+    cols: [
+      { k: 'time', t: 'זמן', v: r => r.time, nf: true },
+      { k: 'who', t: 'מנהל', v: r => r.who },
+      { k: 'action', t: 'פעולה', v: r => r.action, h: r => '<b>' + esc(r.action) + '</b>' },
+      { k: 'item', t: 'פריט', v: r => r.item, nf: true },
+      { k: 'before', t: 'לפני', v: r => r.before, nf: true, h: r => '<span class="mut">' + esc(r.before) + '</span>' },
+      { k: 'after', t: 'אחרי', v: r => r.after, nf: true }] });
 }
-$('auditQ').oninput = renderAudit;
+$('auFrom').onchange = $('auTo').onchange = renderAudit;
+$('auClear').onclick = () => { $('auFrom').value = ''; $('auTo').value = ''; renderAudit(); };
 
 /* ---------- החשבון שלי ---------- */
 $('btnAccount').onclick = async () => {
@@ -882,19 +1142,31 @@ function qrSvg(id) {
   return q.createSvgTag({ cellSize: 8, margin: 1, scalable: true });
 }
 const pointNum = (p) => p['מספר'] || String(p.PointID).replace(/\D/g, '').replace(/^0+/, '');
+let qrSel = null;            // הנקודות שנבחרו להדפסה (ברירת מחדל: כל המוצגות)
+let qrShown = [];            // מה שמוצג אחרי הסינון
 function renderQrList() {
-  const pts = data.points.filter(p => isOn(p['פעיל'])).sort((a, b) => String(a['קוד אתר']).localeCompare(b['קוד אתר']) || (parseInt(pointNum(a)) || 0) - (parseInt(pointNum(b)) || 0));
-  $('tblQr').innerHTML = '<tr><th></th><th>מס\'</th><th>שם</th><th>אתר · קומה</th><th>צוות</th><th></th></tr>' + pts.map(p =>
-    '<tr><td><input type="checkbox" class="chk qrsel" value="' + esc(p.PointID) + '" checked></td><td><b>' + esc(pointNum(p)) + '</b></td><td>' +
-    esc(p['שם נקודה']) + '</td><td>' + esc(p['קוד אתר']) + (p['קומה'] ? ' · קומה ' + esc(p['קומה']) : '') + '</td><td>' + teamChip(p['צוות']) +
-    '</td><td><button class="btn sec sm" data-png="' + esc(p.PointID) + '">הורד PNG</button></td></tr>').join('');
-  document.querySelectorAll('.qrsel').forEach(c => c.onchange = renderLabels);
-  document.querySelectorAll('[data-png]').forEach(b => b.onclick = () => downloadPng(b.dataset.png));
-  renderLabels();
+  const pts = data.points.filter(p => isOn(p['פעיל']) && inScope(p['קוד אתר'], p['צוות']));
+  if (!qrSel) qrSel = new Set(pts.map(p => p.PointID));
+  xt('tblQr', { file: 'ברקודים', rows: pts, empty: 'אין נקודות פעילות באתר/צוות שבחרת',
+    cols: [
+      { k: 'sel', t: '', x: true, h: p => '<input type="checkbox" class="chk qrsel" value="' + esc(p.PointID) + '"' + (qrSel.has(p.PointID) ? ' checked' : '') + '>' },
+      { k: 'num', t: "מס'", v: p => pointNum(p), s: p => parseInt(pointNum(p)) || 0, nf: true, h: p => '<b>' + esc(pointNum(p)) + '</b>' },
+      { k: 'name', t: 'שם', v: p => p['שם נקודה'], nf: true },
+      { k: 'site', t: 'אתר', v: p => p['קוד אתר'] },
+      { k: 'floor', t: 'קומה', v: p => p['קומה'] },
+      { k: 'team', t: 'צוות', v: p => p['צוות'], h: p => teamChip(p['צוות']) },
+      { k: 'png', t: '', x: true, h: p => '<button class="btn sec sm" data-png="' + esc(p.PointID) + '">הורד PNG</button>' }],
+    after: (rows) => {
+      qrShown = rows.map(p => p.PointID);
+      document.querySelectorAll('#tblQr .qrsel').forEach(c => c.onchange = () => { c.checked ? qrSel.add(c.value) : qrSel.delete(c.value); renderLabels(); });
+      document.querySelectorAll('#tblQr [data-png]').forEach(b => b.onclick = () => downloadPng(b.dataset.png));
+      $('btnAll').textContent = qrShown.length && qrShown.every(id => qrSel.has(id)) ? 'בטל את הבחירה' : 'בחר את כל המוצגים (' + qrShown.length + ')';
+      renderLabels();
+    } });
 }
 function renderLabels() {
   const size = $('qrSize').value;
-  const ids = [...document.querySelectorAll('.qrsel:checked')].map(c => c.value);
+  const ids = qrShown.filter(id => qrSel.has(id));
   $('printArea').innerHTML = ids.map(id => {
     const p = data.points.find(x => x.PointID === id);
     const en = p[NAME_COLS.en] || '';
@@ -911,8 +1183,9 @@ function renderLabels() {
   });
 }
 $('qrSize').onchange = renderLabels;
-$('btnAll').onclick = () => { const all = document.querySelectorAll('.qrsel'); const v = [...all].some(c => !c.checked); all.forEach(c => c.checked = v); renderLabels(); };
-$('btnPrint').onclick = () => { if (!document.querySelector('.qrsel:checked')) return notify('הדפסה', 'לא נבחרו נקודות'); window.print(); };
+$('btnAll').onclick = () => { const all = qrShown.every(id => qrSel.has(id));
+  qrShown.forEach(id => all ? qrSel.delete(id) : qrSel.add(id)); xtBody('tblQr'); };
+$('btnPrint').onclick = () => { if (!qrShown.some(id => qrSel.has(id))) return notify('הדפסה', 'לא נבחרו נקודות'); window.print(); };
 
 /** PNG באיכות הדפסה: 9×7 ס"מ ב-300dpi (1063×827) – אותו עיצוב כמו התווית */
 function downloadPng(id) {
@@ -955,17 +1228,17 @@ function downloadPng(id) {
   $('exFrom').value = iso(f); $('exTo').value = iso(t);
 })();
 $('btnExport').onclick = async () => {
-  $('exMsg').textContent = 'מוריד…';
+  $('exMsg').textContent = 'מכין קובץ… (זה יכול לקחת עד דקה)'; $('btnExport').disabled = true;
   try {
-    const r = await api('admin.scans', { from: $('exFrom').value, to: $('exTo').value });
-    const cell = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-    const csv = '﻿' + [r.cols].concat(r.rows).map(row => row.map(cell).join(',')).join('\r\n');
+    const r = await api('admin.exportXlsx', { from: $('exFrom').value, to: $('exTo').value, site: scope.site, team: scope.team });
+    const bin = atob(r.b64), bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-    a.download = 'סריקות ' + $('exFrom').value + ' עד ' + $('exTo').value + '.csv';
-    a.click();
-    $('exMsg').textContent = r.rows.length + ' שורות';
+    a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    a.download = r.name; a.click();
+    $('exMsg').textContent = 'ירד ✓ · עמידה בתקופה: ' + r.compliance + '%';
   } catch (e) { $('exMsg').textContent = e.message; }
+  $('btnExport').disabled = false;
 };
 
 if (token) start().catch(() => { SS.del('adm'); token = null; $('login').classList.remove('hide'); $('app').classList.add('hide'); });
