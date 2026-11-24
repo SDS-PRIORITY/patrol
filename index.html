@@ -214,6 +214,9 @@ function show(id) {
 }
 
 function route() {
+  if (deviceId && cfg && cfg.released) {               // המנהל שחרר את הטלפון → חוזרים לרישום
+    deviceId = null; emp = null; LS.set('deviceId', null); LS.set('emp', null); LS.set('cfg', null); cfg = null;
+  }
   if (!deviceId) return showRegister();
   if (!cfg) { show('scr-employee'); $('empMsg').textContent = t('noServer'); return; }
   if (cfg.deviceOk === false) { applyLang(); return show('scr-blocked'); }
@@ -239,11 +242,12 @@ async function showRegister() {
 }
 function fillRegEmp() {
   const team = $('regTeam').value;
-  const list = ((cfg && cfg.employees) || []).filter(e => !team || e.team === team);
+  const site = $('regSite').value;
+  const list = ((cfg && cfg.employees) || []).filter(e => (!team || e.team === team) && (!e.site || !site || e.site === site));
   $('regEmp').innerHTML = '<option value="">טלפון משותף (בחירת שם בכל משמרת)</option>' +
     list.map(e => '<option value="' + esc(e.name) + '">' + esc(e.name) + ' – עובד קבוע</option>').join('');
 }
-$('regTeam').onchange = fillRegEmp;
+$('regTeam').onchange = $('regSite').onchange = fillRegEmp;
 
 /* ---------- משמרות ועובד ---------- */
 function shiftKey(d = new Date()) {
@@ -509,6 +513,7 @@ function refreshDevice() {
   if (!cfg || !deviceId) return;
   if ($('scr-register').classList.contains('on') || $('scr-fault') && $('scr-fault').classList.contains('on')) return;   // לא מפריעים באמצע טופס
   const onScan = $('scr-scan').classList.contains('on'), onEmp = $('scr-employee').classList.contains('on'), onBlocked = $('scr-blocked').classList.contains('on');
+  if (cfg.released) return route();
   const wrong = cfg.deviceOk === false || (fixedEmp() && (!emp || emp.name !== cfg.device.employee)) ||
     (!fixedEmp() && emp && devTeam() && emp.team !== devTeam()) ||
     (!fixedEmp() && emp && !(cfg.employees || []).some(e => e.name === emp.name));     // העובד הושבת/הוסר

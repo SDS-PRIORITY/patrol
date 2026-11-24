@@ -1,5 +1,5 @@
 // Service Worker – מאפשר לסורק להיפתח גם בלי קליטה (אחרי טעינה ראשונה)
-const CACHE = 'patrol-v3';
+const CACHE = 'patrol-v4';
 const ASSETS = ['./', './index.html', './config.js', './i18n.js', './manifest.json', './icon.svg',
   'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'];
 

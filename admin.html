@@ -104,21 +104,26 @@
   fieldset[disabled] .cb, fieldset[disabled] .mode { cursor:default; }
   /* ===== תווית ברקוד (לרוחב, כמו המדבקות הקיימות) ===== */
   #printArea { display:flex; flex-wrap:wrap; gap:6mm; justify-content:center; }
-  .lbl { --k:1; width:calc(90mm*var(--k)); height:calc(70mm*var(--k)); border:calc(1.6mm*var(--k)) solid var(--tc); border-radius:calc(2.5mm*var(--k));
-    background:#fff; color:#111; display:flex; flex-direction:column; overflow:hidden; font-family:Arial,"Noto Sans Hebrew",sans-serif;
+  /* מסגרת פסטל בצבע הצוות, רקע בגוון בהיר, צוות מימין ולוגו משמאל, QR גדול, פס תחתון בכחול החברה */
+  .lbl { --k:1; --tc:#3D8FDB; --tp:#9EC7ED; --tb:#EEF5FC; --td:#173E61; --brand:#0D1855;
+    width:calc(90mm*var(--k)); height:calc(70mm*var(--k)); border:calc(3.2mm*var(--k)) solid var(--tp); border-radius:calc(3mm*var(--k));
+    background:var(--tb); color:#111; display:flex; flex-direction:column; overflow:hidden; font-family:Arial,"Noto Sans Hebrew",sans-serif;
     break-inside:avoid; page-break-inside:avoid; -webkit-print-color-adjust:exact; print-color-adjust:exact; box-sizing:border-box; }
   .lbl.L-large { --k:1.9; }
-  .lbl .top { background:var(--tc); display:flex; align-items:center; gap:calc(2mm*var(--k)); padding:calc(2mm*var(--k)); flex:none; }
-  .lbl .qr { background:#fff; padding:calc(1.2mm*var(--k)); border-radius:calc(1.2mm*var(--k)); flex:none; line-height:0; }
-  .lbl .qr svg { width:calc(30mm*var(--k)); height:calc(30mm*var(--k)); display:block; }
-  .lbl .numbox { flex:1; text-align:center; color:#fff; min-width:0; }
-  .lbl .num { font-size:calc(17mm*var(--k)); font-weight:800; line-height:1; }
-  .lbl .team { font-size:calc(4.2mm*var(--k)); font-weight:700; margin-top:calc(1mm*var(--k)); }
-  .lbl .names { flex:1; display:flex; flex-direction:column; justify-content:center; text-align:center; padding:0 calc(2mm*var(--k)); min-height:0; }
-  .lbl .he { font-size:calc(6.6mm*var(--k)); font-weight:800; line-height:1.15; white-space:nowrap; overflow:hidden; }
-  .lbl .en { font-size:calc(4.6mm*var(--k)); font-weight:700; color:#333; white-space:nowrap; overflow:hidden; direction:ltr; }
-  .lbl .foot { display:flex; justify-content:space-between; border-top:calc(.5mm*var(--k)) solid #111; margin:0 calc(2mm*var(--k));
-    padding:calc(1mm*var(--k)) calc(.5mm*var(--k)) calc(1.4mm*var(--k)); font-size:calc(4.2mm*var(--k)); font-weight:700; flex:none; }
+  .lbl .top { display:flex; justify-content:space-between; align-items:center; height:calc(10mm*var(--k)); padding:0 calc(2.2mm*var(--k)); flex:none; }
+  .lbl .tag { background:var(--tp); color:var(--td); font-weight:800; font-size:calc(4.2mm*var(--k)); padding:calc(.6mm*var(--k)) calc(3mm*var(--k)); border-radius:calc(1.6mm*var(--k)); }
+  .lbl .logo { height:calc(7.5mm*var(--k)); background:#fff; border-radius:calc(1.2mm*var(--k)); padding:calc(.4mm*var(--k)) calc(1mm*var(--k)); display:flex; align-items:center; }
+  .lbl .logo img { height:100%; display:block; }
+  .lbl .logo b { color:var(--brand); font-size:calc(4.5mm*var(--k)); padding:0 calc(1mm*var(--k)); }
+  .lbl .body { flex:1; display:flex; align-items:center; gap:calc(2mm*var(--k)); padding:0 calc(2.2mm*var(--k)); min-height:0; }
+  .lbl .txt { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; height:100%; }
+  .lbl .num { font-size:calc(15mm*var(--k)); font-weight:800; line-height:1; color:var(--brand); }
+  .lbl .he { font-size:calc(5.4mm*var(--k)); font-weight:800; line-height:1.15; margin-top:calc(1.2mm*var(--k)); max-height:calc(12.6mm*var(--k)); overflow:hidden; }
+  .lbl .en { font-size:calc(3.8mm*var(--k)); font-weight:700; color:#333; white-space:nowrap; overflow:hidden; direction:ltr; text-align:right; margin-top:calc(.8mm*var(--k)); }
+  .lbl .qr { background:#fff; padding:calc(1.4mm*var(--k)); border-radius:calc(1.6mm*var(--k)); flex:none; line-height:0; }
+  .lbl .qr svg { width:calc(37mm*var(--k)); height:calc(37mm*var(--k)); display:block; }
+  .lbl .foot { display:flex; justify-content:space-between; background:var(--brand); color:#fff; height:calc(7.5mm*var(--k)); align-items:center;
+    padding:0 calc(3mm*var(--k)); font-size:calc(4.2mm*var(--k)); font-weight:700; flex:none; }
   .printTip { background:#eef6ff; border:1px solid #bcd6f5; color:#1e3a5f; border-radius:8px; padding:8px 12px; font-size:13px; margin:8px 0 12px; }
   .ro { display:inline-block; background:#eceff3; color:#5b6575; border-radius:20px; padding:1px 9px; font-size:12px; font-weight:600; }
   .who { color:#cbd5e1; font-size:13px; margin-inline-start:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
@@ -155,7 +160,9 @@
     <button data-tab="qr">הדפסת ברקודים</button>
     <button data-tab="faults">תקלות<span class="badge" id="faultBadge"></span></button>
     <button data-tab="devices">מכשירים</button>
+    <button data-tab="emps">עובדים</button>
     <button data-tab="export">ייצוא</button>
+    <button data-tab="sites" id="navSites" class="hide">אתרים</button>
     <button data-tab="managers" id="navManagers" class="hide">מנהלים</button>
     <button data-tab="audit">יומן שינויים</button>
   </nav>
@@ -197,7 +204,7 @@
       <div class="grid">
         <div><label>שם נקודה *</label><input id="f_name" placeholder="חדר UPS 2"></div>
         <div><label>מספר (מופיע גדול על התווית)</label><input id="f_num" placeholder="14"></div>
-        <div><label>אתר *</label><input id="f_site" list="sitesList" placeholder="DC-A"><datalist id="sitesList"></datalist></div>
+        <div><label>אתר *</label><select id="f_site"></select></div>
         <div><label>קומה</label><input id="f_floor" placeholder="2"></div>
         <div><label>תיאור</label><input id="f_desc"></div>
         <div><label>צוות</label><input id="f_team" list="teams" placeholder="חשמל / ניקיון"><datalist id="teams"></datalist></div>
@@ -283,6 +290,19 @@
   </section>
 
   <!-- מנהלים (מנהל-על) -->
+  <section id="tab-emps" class="tab">
+    <div class="card"><div class="bar" style="justify-content:space-between"><h2 style="margin:0">עובדים</h2><button class="btn" id="btnEmpNew">+ עובד חדש</button></div>
+      <p class="mut">העובדים שמופיעים בטלפונים. עובד שעזב: "ערוך" ← לבטל "פעיל" (ההיסטוריה שלו נשמרת). השפה קובעת באיזו שפה הטלפון שלו מוצג.</p>
+      <div id="tblEmps"></div></div>
+  </section>
+
+  <section id="tab-sites" class="tab">
+    <div class="card"><div class="bar" style="justify-content:space-between"><h2 style="margin:0">אתרים</h2><button class="btn" id="btnSiteNew">+ אתר חדש</button></div>
+      <p class="mut">הקוד הקצר מופיע על התוויות. השם המלא מופיע במסכי המנהל ובדוח. שינוי קוד מתעדכן אוטומטית בכל הנקודות, הטלפונים, המנהלים והעובדים.
+        אתר שכבר לא בשימוש: "ערוך" ← לבטל "פעיל" (ההיסטוריה נשמרת).</p>
+      <div id="tblSites"></div></div>
+  </section>
+
   <section id="tab-managers" class="tab">
     <div class="card">
       <h2 id="mgrTitle">מנהל חדש</h2>
@@ -481,7 +501,7 @@ function xtDownload(id) {
 
 /* ---------- סינון אתר/צוות למעלה (משותף ללשוניות) ---------- */
 // כל מנהל רואה בכניסה את האתרים שלו (מנהל-על: הכול). הבחירה נשמרת.
-const SCOPE_TABS = ['dash', 'points', 'qr', 'faults', 'devices', 'export'];
+const SCOPE_TABS = ['dash', 'points', 'qr', 'faults', 'devices', 'emps', 'export'];
 let scope = { site: '', team: '' };
 function initScope() {
   const saved = LS.get('scope:' + me().user);
@@ -489,7 +509,7 @@ function initScope() {
   scope = saved || { site: mine ? '*mine' : '', team: '' };
   const sites = data.sites || [];
   $('scSite').innerHTML = (mine ? '<option value="*mine">האתרים שלי (' + esc(me().sites.join(', ')) + ')</option>' : '') +
-    '<option value="">כל האתרים</option>' + sites.map(x => '<option value="' + esc(x) + '">' + esc(x) + '</option>').join('');
+    '<option value="">כל האתרים</option>' + sites.map(x => '<option value="' + esc(x) + '">' + esc(siteLabel(x)) + '</option>').join('');
   $('scTeam').innerHTML = '<option value="">כל הצוותים</option>' + (data.teams || []).map(x => '<option value="' + esc(x) + '">' + esc(x) + '</option>').join('');
   if (![...$('scSite').options].some(op => op.value === scope.site)) scope.site = mine ? '*mine' : '';
   if (![...$('scTeam').options].some(op => op.value === scope.team)) scope.team = '';
@@ -511,7 +531,7 @@ $('scSite').onchange = $('scTeam').onchange = () => {
   scope = { site: $('scSite').value, team: $('scTeam').value }; LS.set('scope:' + me().user, scope); scopeLook();
   const tab = (document.querySelector('nav button.on') || {}).dataset || {};
   if (tab.tab === 'dash') renderToday(); if (tab.tab === 'points') renderPoints(); if (tab.tab === 'qr') renderQrList();
-  if (tab.tab === 'faults') renderFaults(); if (tab.tab === 'devices') renderDevices();
+  if (tab.tab === 'faults') renderFaults(); if (tab.tab === 'devices') renderDevices(); if (tab.tab === 'emps') renderEmps();
 };
 function showScope(tab) { $('scope').classList.toggle('hide', SCOPE_TABS.indexOf(tab) < 0); }
 
@@ -572,6 +592,8 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = async () => {
   if (b.dataset.tab === 'qr') renderQrList();
   if (b.dataset.tab === 'faults') loadFaults();
   if (b.dataset.tab === 'devices') loadData().then(renderDevices);
+  if (b.dataset.tab === 'emps') loadData().then(renderEmps);
+  if (b.dataset.tab === 'sites') loadData().then(renderSites);
   if (b.dataset.tab === 'managers') loadManagers();
   if (b.dataset.tab === 'audit') loadAudit();
 });
@@ -584,8 +606,9 @@ async function loadData() {
   $('whoName').innerHTML = 'שלום, <b>' + esc(me().name) + '</b> · ' + esc(me().role) +
     (me().isSuper ? '' : ' · אתרים: ' + esc((me().sites || []).join(', ') || '—'));
   $('navManagers').classList.toggle('hide', !me().isSuper);
+  $('navSites').classList.toggle('hide', !me().isSuper);
   $('colorsCard').classList.toggle('hide', !me().isSuper);
-  $('sitesList').innerHTML = (data.editSites || []).map(x => '<option value="' + esc(x) + '">').join('');
+  fillSiteSelect('f_site', $('f_site').value);
   if (!$('nameFields').children.length) $('nameFields').innerHTML = Object.keys(NAME_COLS).map(k =>
     '<div><label>' + esc(LANG_HE[k] || k) + '</label><input id="f_n_' + k + '" dir="' + (k === 'ar' ? 'rtl' : 'ltr') + '"></div>').join('');
   buildSchedChips();
@@ -620,18 +643,25 @@ const teamClr = (t) => colorOf((data && data.colors.teams) || {}, t);
 const siteClr = (s) => colorOf((data && data.colors.sites) || {}, s);
 const chip = (txt, hex) => txt ? '<span class="chip" style="background:' + hex + '">' + esc(txt) + '</span>' : '';
 const teamChip = (t) => chip(t, teamClr(t));
-const siteChip = (s) => chip(s, siteClr(s));
+const siteName = (code) => { const x = ((data && data.sitesInfo) || []).find(i => i.code === code); return x && x.name ? x.name : ''; };
+const siteLabel = (code) => code + (siteName(code) ? ' · ' + siteName(code) : '');
+const siteChip = (s) => s ? '<span title="' + esc(siteName(s)) + '">' + chip(s, siteClr(s)) + '</span>' : '';
+/** רשימת אתרים לבחירה: האתרים הפעילים שמותר לערוך + הערך הנוכחי (גם אם מושבת / צפייה בלבד) */
+function fillSiteSelect(id, cur) {
+  const list = [...new Set((cur ? [cur] : []).concat(data.editSites || []))].filter(Boolean);
+  $(id).innerHTML = list.map(x => '<option value="' + esc(x) + '"' + (x === cur ? ' selected' : '') + '>' + esc(siteLabel(x)) + '</option>').join('') || '<option value="">— אין אתרים —</option>';
+}
 
 function renderColors() {
   const teams = [...new Set(Object.keys(data.colors.teams).concat(data.points.map(p => p['צוות']), data.employees.map(e => e['צוות'])))].filter(Boolean);
-  const sites = [...new Set(Object.keys(data.colors.sites).concat(data.points.map(p => p['קוד אתר'])))].filter(Boolean);
+
   const row = (kind, n, c) => '<label><input type="color" data-kind="' + kind + '" data-name="' + esc(n) + '" value="' + c + '">' + esc(n) + '</label>';
   $('clrTeams').innerHTML = teams.map(t => row('teams', t, teamClr(t))).join('') || '<span class="mut">אין צוותים</span>';
-  $('clrSites').innerHTML = sites.map(s => row('sites', s, siteClr(s))).join('') || '<span class="mut">אין אתרים</span>';
+  $('clrSites').innerHTML = '<span class="mut">צבעי האתרים נקבעים בלשונית "אתרים"' + (me().isSuper ? '' : ' (מנהל-על)') + '.</span>';
 }
 $('colorsCard').addEventListener('input', () => DIRTY.colors = true);
 $('btnColors').onclick = async () => {
-  const colors = { teams: {}, sites: {} };
+  const colors = { teams: {}, sites: data.colors.sites || {} };
   document.querySelectorAll('.colors input[type=color]').forEach(i => colors[i.dataset.kind][i.dataset.name] = i.value);
   $('clrMsg').textContent = 'שומר…';
   try { data.colors = await api('admin.saveColors', { colors }); DIRTY.colors = false; renderPoints(); $('clrMsg').textContent = 'נשמר ✓'; }
@@ -782,7 +812,8 @@ function clearForm() {
   editingId = ''; DIRTY.point = false;
   ['f_name', 'f_num', 'f_site', 'f_floor', 'f_desc', 'f_team', 'f_gap']
     .concat(Object.keys(NAME_COLS).map(k => 'f_n_' + k)).forEach(id => { if ($(id)) $(id).value = ''; });
-  $('f_site').value = (!me().isSuper && (me().sites || [])[0]) || '';
+  const defSite = scope.site && scope.site !== '*mine' && (data.editSites || []).indexOf(scope.site) >= 0 ? scope.site : (data.editSites || [])[0] || '';
+  fillSiteSelect('f_site', defSite);
   setReadOnly(false);
   $('f_from').value = (data && data.today) || '';
   $('f_active').checked = true;
@@ -812,7 +843,7 @@ async function editPoint(id) {
   const p = data.points.find(x => x.PointID === id); if (!p) return;
   if (id !== editingId && !await guardDirty('point')) return;
   editingId = id; DIRTY.point = false;
-  $('f_name').value = p['שם נקודה']; $('f_site').value = p['קוד אתר']; $('f_desc').value = p['תיאור'];
+  $('f_name').value = p['שם נקודה']; fillSiteSelect('f_site', p['קוד אתר']); $('f_desc').value = p['תיאור'];
   $('f_num').value = p['מספר'] || ''; $('f_floor').value = p['קומה'] || '';
   $('f_team').value = p['צוות'];
   $('f_gap').value = p["מרווח מינימלי (דק')"];
@@ -1009,11 +1040,12 @@ function renderDevices() {
       { k: 'site', t: 'אתר', v: d => d['אתר'], h: d => siteChip(d['אתר']) },
       { k: 'team', t: 'צוות', v: d => d['צוות'] || 'כל הצוותים', h: d => d['צוות'] ? teamChip(d['צוות']) : '<span class="mut">כל הצוותים</span>' },
       { k: 'emp', t: 'עובד קבוע', v: d => d['עובד קבוע'] || 'טלפון משותף', h: d => d['עובד קבוע'] ? esc(d['עובד קבוע']) : '<span class="mut">טלפון משותף</span>' },
-      { k: 'act', t: 'פעיל', v: d => isOn(d['פעיל']) ? 'פעיל' : 'חסום', h: d => isOn(d['פעיל']) ? '✓' : '<span class="pill p-err">חסום</span>' },
+      { k: 'act', t: 'מצב', v: d => d['שוחרר'] ? 'שוחרר' : isOn(d['פעיל']) ? 'פעיל' : 'חסום',
+        h: d => d['שוחרר'] ? '<span class="pill p-warn">שוחרר</span>' : isOn(d['פעיל']) ? '✓' : '<span class="pill p-err">חסום</span>' },
       { k: 'seen', t: 'סריקה אחרונה', v: d => d.lastSeen || '', nf: true, h: d => '<span class="mut">' + esc(d.lastSeen || '—') + '</span>' },
       { k: 'ok', t: 'אושר', v: d => String(d['תאריך אישור']).slice(0, 10) + (d['אושר על ידי'] ? ' · ' + d['אושר על ידי'] : ''), nf: true,
         h: d => '<span class="mut">' + esc(String(d['תאריך אישור']).slice(0, 10)) + (d['אושר על ידי'] ? '<br>' + esc(d['אושר על ידי']) : '') + '</span>' },
-      { k: 'btn', t: '', x: true, h: d => d._canEdit ? '<button class="btn sec sm" data-dedit="' + esc(d.DeviceID) + '">ערוך</button>' : '<span class="ro">צפייה בלבד</span>' }],
+      { k: 'btn', t: '', x: true, h: d => d['שוחרר'] ? '' : d._canEdit ? '<button class="btn sec sm" data-dedit="' + esc(d.DeviceID) + '">ערוך</button>' : '<span class="ro">צפייה בלבד</span>' }],
     after: () => document.querySelectorAll('#tblDevices [data-dedit]').forEach(b => b.onclick = () => editDevice(b.dataset.dedit)) });
 }
 /** עריכת טלפון בחלון: שם, אתר, צוות, עובד קבוע, פעיל */
@@ -1029,10 +1061,19 @@ async function editDevice(id) {
     '<div><label>צוות</label><select id="dv_team"><option value="">— כל הצוותים —</option>' + (data.teams || []).map(x => '<option' + (x === d['צוות'] ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select></div>' +
     '<div><label>עובד קבוע</label><select id="dv_emp">' + empOpts(d['צוות'], d['עובד קבוע']) + '</select></div></div>' +
     '<label style="margin-top:12px;display:flex;align-items:center;color:var(--fg)"><input type="checkbox" class="chk" id="dv_act"' + (isOn(d['פעיל']) ? ' checked' : '') + '>פעיל (בלי סימון = הטלפון חסום ולא יכול לסרוק)</label>' +
-    '<p class="mut" id="dv_msg"></p>';
-  const ok = await modal({ title: 'עריכת טלפון', html, ok: 'שמור', onOpen: () => {
+    '<div style="border-top:1px solid var(--line);margin-top:14px;padding-top:12px"><button type="button" class="btn sec sm" id="dv_rel" style="color:var(--errT)">שחרר טלפון…</button>' +
+    '<span class="mut" style="margin-inline-start:8px">הטלפון יחזור למסך הרישום, ואפשר יהיה לרשום אותו מחדש (גם לעובד אחר).</span></div>';
+  let release = false;
+  const ok = await modal({ title: 'עריכת טלפון', html, ok: 'שמור', onOpen: (done) => {
     $('dv_team').onchange = (e) => { $('dv_emp').innerHTML = empOpts(e.target.value, ''); };
+    $('dv_rel').onclick = () => { release = true; done(false); };
   } });
+  if (release) {
+    if (!await modal({ title: 'שחרור טלפון', html: '"' + esc(d['שם מכשיר']) + '" יחזור למסך הרישום, ואפשר יהיה לרשום אותו מחדש לעובד אחר או לצוות אחר.<br><span class="mut">הסריקות הקודמות שלו נשמרות.</span>', ok: 'שחרר' })) return;
+    try { await api('admin.releaseDevice', { id: d.DeviceID }); await loadData(); renderDevices(); notify('הטלפון שוחרר ✓', 'בפעם הבאה שיפתחו בו את האפליקציה (או תוך דקה אם היא פתוחה) יופיע מסך הרישום.'); }
+    catch (e) { notify('לא שוחרר', esc(e.message)); }
+    return;
+  }
   if (!ok) return;
   const dev = { DeviceID: d.DeviceID, 'שם מכשיר': $('dv_name').value, 'אתר': $('dv_site').value, 'צוות': $('dv_team').value,
     'עובד קבוע': $('dv_emp').value, 'פעיל': $('dv_act').checked };
@@ -1040,12 +1081,92 @@ async function editDevice(id) {
   catch (e) { notify('לא נשמר', esc(e.message)); }
 }
 
+/* ---------- אתרים (מנהל-על) ---------- */
+function renderSites() {
+  const cnt = (code, list, key) => list.filter(x => x[key] === code).length;
+  const rows = (data.sitesInfo || []).map(x => Object.assign({}, x, {
+    pts: data.points.filter(p => p['קוד אתר'] === x.code && isOn(p['פעיל'])).length,
+    devs: data.devices.filter(d => d['אתר'] === x.code && isOn(d['פעיל'])).length,
+    emps: cnt(x.code, data.employees, 'אתר') }));
+  xt('tblSites', { file: 'אתרים', rows, empty: 'אין אתרים. לחץ "+ אתר חדש".', rc: x => x.active ? '' : 'row-ex',
+    cols: [
+      { k: 'code', t: 'קוד (על התווית)', v: x => x.code, nf: true, h: x => chip(x.code, x.color || siteClr(x.code)) },
+      { k: 'name', t: 'שם מלא', v: x => x.name, nf: true },
+      { k: 'pts', t: 'נקודות פעילות', v: x => x.pts, s: x => x.pts, nf: true },
+      { k: 'devs', t: 'טלפונים פעילים', v: x => x.devs, s: x => x.devs, nf: true },
+      { k: 'emps', t: 'עובדים', v: x => x.emps, s: x => x.emps, nf: true },
+      { k: 'act', t: 'מצב', v: x => x.active ? 'פעיל' : 'מושבת', h: x => x.active ? '✓' : '<span class="pill p-warn">מושבת</span>' },
+      { k: 'btn', t: '', x: true, h: x => '<button class="btn sec sm" data-site="' + esc(x.code) + '">ערוך</button>' }],
+    after: () => document.querySelectorAll('#tblSites [data-site]').forEach(b => b.onclick = () => editSite(b.dataset.site)) });
+}
+async function editSite(code) {
+  const x = code ? (data.sitesInfo || []).find(i => i.code === code) : null;
+  const html = '<div class="grid" style="grid-template-columns:1fr 1fr">' +
+    '<div><label>קוד קצר * (מופיע על התווית)</label><input id="st_code" value="' + esc(x ? x.code : '') + '" placeholder="DC-C" maxlength="20" dir="ltr" style="text-align:right"></div>' +
+    '<div><label>שם מלא</label><input id="st_name" value="' + esc(x ? x.name : '') + '" placeholder="חוות שרתים חיפה"></div>' +
+    '<div><label>צבע</label><input type="color" id="st_color" value="' + esc(x ? (x.color || siteClr(x.code)) : '#0891B2') + '" style="height:40px;padding:2px"></div></div>' +
+    '<label style="margin-top:12px;display:flex;align-items:center;color:var(--fg)"><input type="checkbox" class="chk" id="st_act"' + (!x || x.active ? ' checked' : '') + '>פעיל (אתר מושבת לא מופיע ברשימות הבחירה)</label>';
+  if (!await modal({ title: x ? 'עריכת אתר ' + x.code : 'אתר חדש', html, ok: 'שמור' })) return;
+  const site = { old: x ? x.code : '', code: $('st_code').value.trim(), name: $('st_name').value.trim(), color: $('st_color').value, active: $('st_act').checked };
+  if (x && site.code !== x.code) {
+    const n = (k, a) => a.filter(o => o[k] === x.code).length;
+    const html2 = 'לשנות את הקוד <b>' + esc(x.code) + '</b> ל-<b>' + esc(site.code) + '</b>?<br>יתעדכנו אוטומטית: ' +
+      n('קוד אתר', data.points) + ' נקודות, ' + n('אתר', data.devices) + ' טלפונים, ' + n('אתר', data.employees) + ' עובדים, והמנהלים של האתר.<br>' +
+      '<span class="mut">תוויות שכבר הודפסו ממשיכות לעבוד (הברקוד לא תלוי באתר). בתוויות חדשות יופיע הקוד החדש.</span>';
+    if (!await modal({ title: 'שינוי קוד אתר', html: html2, ok: 'עדכן בכל המקומות' })) return;
+  }
+  try {
+    const r = await api('admin.saveSite', { site });
+    await loadData(); initScope(); renderSites();
+    const moved = Object.keys(r.moved || {}).map(k => r.moved[k] + ' ' + k).join(', ');
+    notify('נשמר ✓', moved ? 'עודכנו: ' + esc(moved) : '');
+  } catch (e) { notify('לא נשמר', esc(e.message)); }
+}
+$('btnSiteNew').onclick = () => editSite('');
+
+/* ---------- עובדים ---------- */
+function renderEmps() {
+  const fixed = {};
+  data.devices.filter(d => isOn(d['פעיל']) && d['עובד קבוע']).forEach(d => fixed[d['עובד קבוע']] = d['שם מכשיר']);
+  // עובד בלי אתר ("כל האתרים") מופיע בכל בחירת אתר
+  const rows = data.employees.filter(e => e['אתר'] ? inScope(e['אתר'], e['צוות']) : (!scope.team || e['צוות'] === scope.team));
+  xt('tblEmps', { file: 'עובדים', rows, empty: 'אין עובדים באתר/צוות שבחרת. לחץ "+ עובד חדש".', rc: e => isOn(e['פעיל']) ? '' : 'row-ex',
+    cols: [
+      { k: 'name', t: 'שם', v: e => e['שם'], nf: true },
+      { k: 'team', t: 'צוות', v: e => e['צוות'], h: e => teamChip(e['צוות']) },
+      { k: 'site', t: 'אתר', v: e => e['אתר'] || 'כל האתרים', h: e => e['אתר'] ? siteChip(e['אתר']) : '<span class="mut">כל האתרים</span>' },
+      { k: 'lang', t: 'שפה', v: e => e['שפה'] || 'עברית' },
+      { k: 'phone', t: 'טלפון קבוע', v: e => fixed[e['שם']] || '', nf: true, h: e => fixed[e['שם']] ? esc(fixed[e['שם']]) : '<span class="mut">—</span>' },
+      { k: 'act', t: 'מצב', v: e => isOn(e['פעיל']) ? 'פעיל' : 'לא פעיל', h: e => isOn(e['פעיל']) ? '✓' : '<span class="pill p-warn">לא פעיל</span>' },
+      { k: 'btn', t: '', x: true, h: e => e._canEdit ? '<button class="btn sec sm" data-emp="' + esc(e['שם']) + '">ערוך</button>' : '<span class="ro">צפייה בלבד</span>' }],
+    after: () => document.querySelectorAll('#tblEmps [data-emp]').forEach(b => b.onclick = () => editEmp(b.dataset.emp)) });
+}
+async function editEmp(name) {
+  const e = name ? data.employees.find(x => x['שם'] === name) : null;
+  const teams = [...new Set((data.teams || []).concat(e && e['צוות'] ? [e['צוות']] : []))];
+  const sites = [...new Set((e && e['אתר'] ? [e['אתר']] : []).concat(data.editSites || []))];
+  const defSite = e ? e['אתר'] : (scope.site && scope.site !== '*mine' && sites.indexOf(scope.site) >= 0 ? scope.site : (!me().isSuper ? sites[0] : ''));
+  const html = '<div class="grid" style="grid-template-columns:1fr 1fr">' +
+    '<div><label>שם *</label><input id="em_name" value="' + esc(e ? e['שם'] : '') + '" placeholder="שם פרטי ומשפחה"></div>' +
+    '<div><label>צוות *</label><input id="em_team" list="em_teams" value="' + esc(e ? e['צוות'] : (scope.team || '')) + '"><datalist id="em_teams">' + teams.map(t => '<option value="' + esc(t) + '">').join('') + '</datalist></div>' +
+    '<div><label>אתר</label><select id="em_site">' + (me().isSuper ? '<option value="">כל האתרים</option>' : '') +
+      sites.map(x => '<option value="' + esc(x) + '"' + (x === defSite ? ' selected' : '') + '>' + esc(siteLabel(x)) + '</option>').join('') + '</select></div>' +
+    '<div><label>שפת הטלפון</label><select id="em_lang">' + (data.langs || ['עברית']).map(l => '<option' + (l === ((e && e['שפה']) || 'עברית') ? ' selected' : '') + '>' + esc(l) + '</option>').join('') + '</select></div></div>' +
+    '<label style="margin-top:12px;display:flex;align-items:center;color:var(--fg)"><input type="checkbox" class="chk" id="em_act"' + (!e || isOn(e['פעיל']) ? ' checked' : '') + '>פעיל (עובד לא פעיל לא מופיע בטלפונים)</label>' +
+    (e ? '<p class="mut">שינוי שם מתעדכן גם בטלפון הקבוע של העובד. סריקות קודמות נשארות עם השם הקודם.</p>' : '');
+  if (!await modal({ title: e ? 'עריכת עובד' : 'עובד חדש', html, ok: 'שמור' })) return;
+  const emp = { old: e ? e['שם'] : '', name: $('em_name').value.trim(), team: $('em_team').value.trim(), site: $('em_site').value, lang: $('em_lang').value, active: $('em_act').checked };
+  try { await api('admin.saveEmployee', { employee: emp }); await loadData(); renderEmps(); notify('נשמר ✓', 'הטלפונים יקבלו את השינוי תוך דקה.'); }
+  catch (err) { notify('לא נשמר', esc(err.message)); }
+}
+$('btnEmpNew').onclick = () => editEmp('');
+
 /* ---------- מנהלים (מנהל-על) ---------- */
 let mgrData = null, mgrEditing = '';
 async function loadManagers() {
   try { mgrData = await api('admin.managers'); } catch (e) { $('tblMgr').innerHTML = '<tr><td class="mut">' + esc(e.message) + '</td></tr>'; return; }
-  const allSites = [...new Set((mgrData.sites || []).concat(data.sites || []))].sort();
-  $('m_sites').innerHTML = allSites.map(x => '<label><input type="checkbox" class="chk msite" value="' + esc(x) + '">' + esc(x) + '</label>').join('') || '<span class="mut">אין אתרים עדיין</span>';
+  const allSites = [...new Set(data.sites || [])].sort();
+  $('m_sites').innerHTML = allSites.map(x => '<label><input type="checkbox" class="chk msite" value="' + esc(x) + '">' + esc(siteLabel(x)) + '</label>').join('') || '<span class="mut">אין אתרים עדיין. מוסיפים בלשונית "אתרים".</span>';
   xt('tblMgr', { file: 'מנהלים', rows: mgrData.managers, empty: 'עדיין אין מנהלים. צור קודם את עצמך כמנהל-על, ואז היכנס עם המשתמש האישי.',
     rc: m => m.active ? '' : 'row-ex',
     cols: [
@@ -1164,20 +1285,34 @@ function renderQrList() {
       renderLabels();
     } });
 }
+/* צבעי התווית נגזרים מצבע הצוות: מסגרת פסטל, רקע בהיר מאוד, טקסט כהה */
+const hexRgb = (h) => [1, 3, 5].map(i => parseInt(String(h).slice(i, i + 2), 16) || 0);
+const mixHex = (h, to, t) => { const a = hexRgb(h), b = hexRgb(to); return '#' + a.map((v, i) => Math.round(v + (b[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
+const lblColors = (team) => { const c = teamClr(team); return { tc: c, tp: mixHex(c, '#ffffff', .5), tb: mixHex(c, '#ffffff', .9), td: mixHex(c, '#000000', .55) }; };
+const LOGO = 'logo.png';
 function renderLabels() {
   const size = $('qrSize').value;
   const ids = qrShown.filter(id => qrSel.has(id));
   $('printArea').innerHTML = ids.map(id => {
     const p = data.points.find(x => x.PointID === id);
-    const en = p[NAME_COLS.en] || '';
-    return '<div class="lbl L-' + size + '" style="--tc:' + teamClr(p['צוות']) + '">' +
-      '<div class="top"><div class="qr">' + qrSvg(id) + '</div><div class="numbox"><div class="num">' + esc(pointNum(p)) + '</div>' +
-      '<div class="team">' + (p['צוות'] ? 'צוות ' + esc(p['צוות']) : '') + '</div></div></div>' +
-      '<div class="names"><div class="he">' + esc(p['שם נקודה']) + '</div>' + (en ? '<div class="en">' + esc(en) + '</div>' : '') + '</div>' +
-      '<div class="foot"><span>' + (p['קומה'] ? 'קומה: ' + esc(p['קומה']) : '') + '</span><span>' + (p['קוד אתר'] ? 'אתר: ' + esc(p['קוד אתר']) : '') + '</span></div></div>';
+    const en = p[NAME_COLS.en] || '', k = lblColors(p['צוות']);
+    return '<div class="lbl L-' + size + '" style="--tc:' + k.tc + ';--tp:' + k.tp + ';--tb:' + k.tb + ';--td:' + k.td + '">' +
+      '<div class="top">' + (p['צוות'] ? '<span class="tag">' + esc(p['צוות']) + '</span>' : '<span></span>') +
+      '<span class="logo"><img src="' + LOGO + '" alt="SDS" onerror="this.outerHTML=\'<b>SDS</b>\'"></span></div>' +
+      '<div class="body"><div class="txt"><div class="num">' + esc(pointNum(p)) + '</div><div class="he">' + esc(p['שם נקודה']) + '</div>' +
+      (en ? '<div class="en">' + esc(en) + '</div>' : '') + '</div><div class="qr">' + qrSvg(id) + '</div></div>' +
+      '<div class="foot"><span>' + (p['קומה'] !== '' && p['קומה'] != null ? 'קומה ' + esc(p['קומה']) : '') + '</span><span>' + esc(p['קוד אתר'] || '') + '</span></div></div>';
   }).join('');
-  // שם ארוך: מקטינים את הכתב עד שנכנס בשורה אחת
-  document.querySelectorAll('#printArea .he, #printArea .en').forEach(el => {
+  // שם ארוך: מקטינים את הכתב עד שנכנס (עד 2 שורות בעברית, שורה אחת באנגלית)
+  // קודם מנסים שורה אחת (מקטינים עד 70%), ורק אם עדיין לא נכנס – שתי שורות
+  document.querySelectorAll('#printArea .he').forEach(el => {
+    const f0 = parseFloat(getComputedStyle(el).fontSize); let f = f0, guard = 60;
+    el.style.whiteSpace = 'nowrap';
+    while (el.scrollWidth > el.clientWidth + 1 && f > f0 * 0.7 && guard-- > 0) { f *= 0.95; el.style.fontSize = f + 'px'; }
+    if (el.scrollWidth > el.clientWidth + 1) { el.style.whiteSpace = 'normal'; f = f0; el.style.fontSize = f + 'px';
+      while ((el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1) && guard-- > 0) { f *= 0.93; el.style.fontSize = f + 'px'; } }
+  });
+  document.querySelectorAll('#printArea .en').forEach(el => {
     let f = parseFloat(getComputedStyle(el).fontSize), guard = 40;
     while (el.scrollWidth > el.clientWidth + 1 && guard-- > 0) { f *= 0.93; el.style.fontSize = f + 'px'; }
   });
@@ -1188,35 +1323,53 @@ $('btnAll').onclick = () => { const all = qrShown.every(id => qrSel.has(id));
 $('btnPrint').onclick = () => { if (!qrShown.some(id => qrSel.has(id))) return notify('הדפסה', 'לא נבחרו נקודות'); window.print(); };
 
 /** PNG באיכות הדפסה: 9×7 ס"מ ב-300dpi (1063×827) – אותו עיצוב כמו התווית */
-function downloadPng(id) {
+let logoImg = null;
+function loadLogo() {
+  return new Promise(res => { if (logoImg) return res(logoImg.complete && logoImg.naturalWidth ? logoImg : null);
+    logoImg = new Image(); logoImg.onload = () => res(logoImg); logoImg.onerror = () => res(null); logoImg.src = LOGO; });
+}
+async function downloadPng(id) {
   const p = data.points.find(x => x.PointID === id);
-  const tc = teamClr(p['צוות']), en = p[NAME_COLS.en] || '';
+  const k = lblColors(p['צוות']), en = p[NAME_COLS.en] || '', BRAND = '#0D1855';
   const W = 1063, H = 827, mm = W / 90;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const x = c.getContext('2d');
-  const fit = (txt, maxW, size, weight) => { let f = size; do { x.font = weight + ' ' + f + 'px Arial'; f *= 0.95; } while (x.measureText(txt).width > maxW && f > 10); };
-  x.fillStyle = tc; x.fillRect(0, 0, W, H);                                   // מסגרת
-  const b = 1.6 * mm; x.fillStyle = '#fff'; x.fillRect(b, b, W - 2 * b, H - 2 * b);
-  const topH = 36 * mm; x.fillStyle = tc; x.fillRect(b, b, W - 2 * b, topH);   // פס עליון
+  const font = (f, w) => x.font = w + ' ' + f + 'px Arial';
+  const fit = (txt, maxW, size, weight) => { let f = size; font(f, weight); while (x.measureText(txt).width > maxW && f > 10) { f *= 0.95; font(f, weight); } return f; };
+  const rr = (X, Y, w, h, r) => { x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); x.fill(); };
+  const b = 3.2 * mm;
+  x.fillStyle = k.tp; x.fillRect(0, 0, W, H);                              // מסגרת
+  x.fillStyle = k.tb; x.fillRect(b, b, W - 2 * b, H - 2 * b);              // רקע
+  const footH = 7.5 * mm; x.fillStyle = BRAND; x.fillRect(b, H - b - footH, W - 2 * b, footH);
+  const topH = 10 * mm, padX = 2.2 * mm;
+  x.textBaseline = 'middle'; x.direction = 'rtl';
+  if (p['צוות']) {                                                        // תגית צוות – ימין
+    font(4.2 * mm, '800'); const tw = x.measureText(p['צוות']).width + 6 * mm, th = 6.4 * mm;
+    x.fillStyle = k.tp; rr(W - b - padX - tw, b + (topH - th) / 2, tw, th, 1.6 * mm);
+    x.fillStyle = k.td; x.textAlign = 'center'; x.fillText(p['צוות'], W - b - padX - tw / 2, b + topH / 2 + 0.3 * mm);
+  }
+  const logo = await loadLogo();                                         // לוגו – שמאל
+  const lh = 7.5 * mm;
+  if (logo) { const lw = lh * logo.naturalWidth / logo.naturalHeight; x.fillStyle = '#fff'; rr(b + padX, b + (topH - lh) / 2, lw + 2 * mm, lh, 1.2 * mm);
+    x.drawImage(logo, b + padX + 1 * mm, b + (topH - lh) / 2 + 0.4 * mm, lw, lh - 0.8 * mm); }
+  else { x.fillStyle = BRAND; font(4.5 * mm, '800'); x.textAlign = 'left'; x.fillText('SDS', b + padX, b + topH / 2); }
+  const bodyTop = b + topH, bodyH = H - b - footH - bodyTop;                // QR – שמאל
   const q = qrcode(0, 'M'); q.addData(qrText(id)); q.make();
-  const n = q.getModuleCount(), qs = 30 * mm, pad = 1.2 * mm, cell = qs / (n + 2);
-  const qx = W - b - 2 * mm - qs - 2 * pad, qy = b + (topH - qs - 2 * pad) / 2;    // ברקוד בצד ימין
-  x.fillStyle = '#fff'; x.fillRect(qx, qy, qs + 2 * pad, qs + 2 * pad);
+  const n = q.getModuleCount(), qs = 37 * mm, pad = 1.4 * mm, cell = qs / (n + 2);
+  const qx = b + padX, qy = bodyTop + (bodyH - qs - 2 * pad) / 2;
+  x.fillStyle = '#fff'; rr(qx, qy, qs + 2 * pad, qs + 2 * pad, 1.6 * mm);
   x.fillStyle = '#000';
   for (let r = 0; r < n; r++) for (let col = 0; col < n; col++)
     if (q.isDark(r, col)) x.fillRect(qx + pad + (col + 1) * cell, qy + pad + (r + 1) * cell, Math.ceil(cell), Math.ceil(cell));
-  const cx = (b + qx) / 2;
-  x.textAlign = 'center'; x.direction = 'rtl'; x.fillStyle = '#fff';
-  x.font = '800 ' + (17 * mm) + 'px Arial'; x.fillText(pointNum(p), cx, b + topH * 0.62);
-  if (p['צוות']) { x.font = '700 ' + (4.2 * mm) + 'px Arial'; x.fillText('צוות ' + p['צוות'], cx, b + topH * 0.88); }
-  x.fillStyle = '#111';
-  const footY = H - b - 7 * mm, namesMid = (b + topH + footY) / 2;
-  fit(p['שם נקודה'], W - 2 * b - 4 * mm, 6.6 * mm, '800'); x.fillText(p['שם נקודה'], W / 2, namesMid + (en ? -0.5 * mm : 2.4 * mm));
-  if (en) { x.direction = 'ltr'; x.fillStyle = '#333'; fit(en, W - 2 * b - 4 * mm, 4.6 * mm, '700'); x.fillText(en, W / 2, namesMid + 5.5 * mm); x.direction = 'rtl'; }
-  x.fillStyle = '#111'; x.fillRect(b + 2 * mm, footY, W - 2 * b - 4 * mm, 0.5 * mm);
-  x.font = '700 ' + (4.2 * mm) + 'px Arial';
-  x.textAlign = 'right'; if (p['קומה']) x.fillText('קומה: ' + p['קומה'], W - b - 2.5 * mm, footY + 5 * mm);
-  x.textAlign = 'left'; if (p['קוד אתר']) x.fillText('אתר: ' + p['קוד אתר'], b + 2.5 * mm, footY + 5 * mm);
+  const tx = W - b - padX, tw = tx - (qx + qs + 2 * pad + 2 * mm);          // טקסט – ימין
+  x.textAlign = 'right'; x.fillStyle = BRAND; font(15 * mm, '800');
+  const mid = bodyTop + bodyH / 2;
+  x.fillText(pointNum(p), tx, mid - (en ? 8 : 6) * mm);
+  x.fillStyle = '#111'; fit(p['שם נקודה'], tw, 5.4 * mm, '800'); x.fillText(p['שם נקודה'], tx, mid + (en ? 3.5 : 5) * mm);
+  if (en) { x.direction = 'ltr'; x.fillStyle = '#333'; fit(en, tw, 3.8 * mm, '700'); x.fillText(en, tx, mid + 9.5 * mm); x.direction = 'rtl'; }
+  x.fillStyle = '#fff'; font(4.2 * mm, '700'); const fy = H - b - footH / 2;
+  x.textAlign = 'right'; if (p['קומה'] !== '' && p['קומה'] != null) x.fillText('קומה ' + p['קומה'], W - b - 3 * mm, fy);
+  x.textAlign = 'left'; if (p['קוד אתר']) x.fillText(p['קוד אתר'], b + 3 * mm, fy);
   const a = document.createElement('a');
   a.download = pointNum(p) + ' - ' + p['שם נקודה'] + '.png'; a.href = c.toDataURL('image/png'); a.click();
 }
