@@ -110,6 +110,8 @@
     background:var(--tb); color:#111; display:flex; flex-direction:column; overflow:hidden; font-family:Arial,"Noto Sans Hebrew",sans-serif;
     break-inside:avoid; page-break-inside:avoid; -webkit-print-color-adjust:exact; print-color-adjust:exact; box-sizing:border-box; }
   .lbl.L-large { --k:1.9; }
+  .lbl.L-medium { --k:0.778; }  /* 7×5.5 ס"מ */
+  .lbl.L-mini { --k:0.66; }     /* 6×4.6 ס"מ */
   .lbl .top { display:flex; justify-content:space-between; align-items:center; height:calc(10mm*var(--k)); padding:0 calc(2.2mm*var(--k)); flex:none; }
   .lbl .tag { background:var(--tp); color:var(--td); font-weight:800; font-size:calc(4.2mm*var(--k)); padding:calc(.6mm*var(--k)) calc(3mm*var(--k)); border-radius:calc(1.6mm*var(--k)); }
   .lbl .logo { height:calc(7.5mm*var(--k)); background:#fff; border-radius:calc(1.2mm*var(--k)); padding:calc(.4mm*var(--k)) calc(1mm*var(--k)); display:flex; align-items:center; }
@@ -296,8 +298,8 @@
     <div class="card">
       <h2>הדפסת ברקודים</h2>
       <div class="bar">
-        <div><label>גודל תווית</label><select id="qrSize" style="width:230px">
-          <option value="small">מדבקה 9×7 ס"מ (6 בדף A4)</option><option value="large">גדול 17×13 ס"מ (2 בדף A4)</option></select></div>
+        <div><label>גודל תווית</label><select id="qrSize" style="width:260px">
+          <option value="small">מדבקה 9×7 ס"מ (6 בדף A4)</option><option value="medium">קטן 7×5.5 ס"מ (8 בדף A4)</option><option value="mini">קטן מאוד 6×4.6 ס"מ (15 בדף A4)</option><option value="large">גדול 17×13 ס"מ (2 בדף A4)</option></select></div>
         <button class="btn sec" id="btnAll">בחר את כל המוצגים</button>
         <button class="btn" id="btnPrint">הדפס / שמור כ-PDF</button>
       </div>
@@ -625,6 +627,7 @@ async function api(action, body = {}) {
     if (String(j.error).startsWith('AUTH')) { SS.del('adm'); location.reload(); }
     throw new Error(j.error);
   }
+  if (j.adminData) applyData(j.adminData);         // שמירה עם withData – נתוני המסך חזרו באותה בקשה
   return j.data;
 }
 
@@ -642,8 +645,10 @@ $('user').onkeydown = (e) => { if (e.key === 'Enter') $('pw').focus(); };
 
 async function start() {
   $('login').classList.add('hide'); $('app').classList.remove('hide');
+  // הדשבורד והנתונים נטענים במקביל (לא אחד אחרי השני)
+  const pre = api('admin.today', { date: $('dashDate').value || '' }); pre.catch(() => {});
   await loadData();
-  loadToday();
+  loadToday(pre);
 }
 $('btnLogout').onclick = async () => { if (!await guardDirty()) return; Object.keys(DIRTY).forEach(k => DIRTY[k] = false); SS.del('adm'); token = null; location.reload(); };
 const me = () => (data && data.me) || {};
@@ -658,17 +663,18 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = async () => {
   if (b.dataset.tab === 'dash') loadToday();
   if (b.dataset.tab === 'qr') renderQrList();
   if (b.dataset.tab === 'faults') loadFaults();
-  if (b.dataset.tab === 'devices') loadData().then(renderDevices);
-  if (b.dataset.tab === 'emps') loadData().then(() => { renderEmps(); loadAbs(); });
-  if (b.dataset.tab === 'sites') loadData().then(renderSites);
+  if (b.dataset.tab === 'devices') { if (data) renderDevices(); loadData().then(renderDevices); }
+  if (b.dataset.tab === 'emps') { if (data) renderEmps(); loadAbs(); loadData().then(renderEmps); }
+  if (b.dataset.tab === 'sites') { if (data) renderSites(); loadData().then(renderSites); }
   if (b.dataset.tab === 'reports') initReports();
   if (b.dataset.tab === 'managers') loadManagers();
   if (b.dataset.tab === 'audit') loadAudit();
 });
 
 /* ---------- נתונים ---------- */
-async function loadData() {
-  data = await api('admin.data');
+async function loadData() { applyData(await api('admin.data')); }
+function applyData(d) {
+  data = d;
   NAME_COLS = data.nameCols || NAME_COLS;
   $('title').textContent = 'ניהול סיורים · ' + (data.site || '');
   $('whoName').innerHTML = 'שלום, <b>' + esc(me().name) + '</b> · ' + esc(me().role) +
@@ -966,8 +972,7 @@ $('btnSave').onclick = async () => {
   if (dup && !await modal({ title: 'מספר כפול', html: 'המספר <b>' + esc(pt['מספר']) + '</b> כבר קיים באתר ' + esc(pt['קוד אתר']) + ': ' + esc(dup['שם נקודה']) + '.<br>על התוויות יופיעו שני מספרים זהים. לשמור בכל זאת?', ok: 'שמור בכל זאת' })) return;
   $('saveMsg').textContent = 'שומר…';
   try {
-    const r = await api('admin.savePoint', { point: pt });
-    await loadData();
+    const r = await api('admin.savePoint', { point: pt, withData: true });
     clearForm();
     $('saveMsg').textContent = 'נשמר ✓ (' + r.id + ')';
   } catch (e) { $('saveMsg').textContent = e.message; }
@@ -996,11 +1001,11 @@ $('btnBulk').onclick = async () => {
     await loadToday(); notify('סומן ✓', r.count + ' החמצות סומנו כמוצדקות.');
   } catch (e) { notify('לא סומן', esc(e.message)); }
 };
-async function loadToday() {
+async function loadToday(pre) {
   clearTimeout(dashTimer);
   if (lastToday && $('dashDate').value && $('dashDate').value !== lastToday.date) bulkSel.clear();
   try {
-    const t = await api('admin.today', { date: $('dashDate').value || '' });
+    const t = await (pre || api('admin.today', { date: $('dashDate').value || '' }));
     lastToday = t;
     $('dashDate').value = t.date; $('dashDate').max = t.now.slice(0, 10);
     $('dashTime').textContent = t.isToday ? 'עודכן: ' + t.now + ' · מתרענן כל 30 שניות' : '';
@@ -1179,14 +1184,14 @@ async function editDevice(id) {
   } });
   if (release) {
     if (!await modal({ title: 'שחרור טלפון', html: '"' + esc(d['שם מכשיר']) + '" יחזור למסך הרישום, ואפשר יהיה לרשום אותו מחדש לעובד אחר או לצוות אחר.<br><span class="mut">הסריקות הקודמות שלו נשמרות.</span>', ok: 'שחרר' })) return;
-    try { await api('admin.releaseDevice', { id: d.DeviceID }); await loadData(); renderDevices(); notify('הטלפון שוחרר ✓', 'בפעם הבאה שיפתחו בו את האפליקציה (או תוך דקה אם היא פתוחה) יופיע מסך הרישום.'); }
+    try { await api('admin.releaseDevice', { id: d.DeviceID, withData: true }); renderDevices(); notify('הטלפון שוחרר ✓', 'בפעם הבאה שיפתחו בו את האפליקציה (או תוך דקה אם היא פתוחה) יופיע מסך הרישום.'); }
     catch (e) { notify('לא שוחרר', esc(e.message)); }
     return;
   }
   if (!ok) return;
   const dev = { DeviceID: d.DeviceID, 'שם מכשיר': $('dv_name').value, 'אתר': $('dv_site').value, 'צוות': $('dv_team').value,
     'עובד קבוע': $('dv_emp').value, 'פעיל': $('dv_act').checked };
-  try { await api('admin.saveDevice', { device: dev }); await loadData(); renderDevices(); notify('נשמר ✓', 'הטלפון יקבל את השינוי תוך דקה (אם האפליקציה פתוחה), או מיד כשיפתחו אותה.'); }
+  try { await api('admin.saveDevice', { device: dev, withData: true }); renderDevices(); notify('נשמר ✓', 'הטלפון יקבל את השינוי תוך דקה (אם האפליקציה פתוחה), או מיד כשיפתחו אותה.'); }
   catch (e) { notify('לא נשמר', esc(e.message)); }
 }
 
@@ -1345,8 +1350,8 @@ async function editSite(code) {
     if (!await modal({ title: 'שינוי קוד אתר', html: html2, ok: 'עדכן בכל המקומות' })) return;
   }
   try {
-    const r = await api('admin.saveSite', { site });
-    await loadData(); initScope(); renderSites();
+    const r = await api('admin.saveSite', { site, withData: true });
+    initScope(); renderSites();
     const moved = Object.keys(r.moved || {}).map(k => r.moved[k] + ' ' + k).join(', ');
     notify('נשמר ✓', moved ? 'עודכנו: ' + esc(moved) : '');
   } catch (e) { notify('לא נשמר', esc(e.message)); }
@@ -1386,7 +1391,7 @@ async function editEmp(name) {
     (e ? '<p class="mut">שינוי שם מתעדכן גם בטלפון הקבוע של העובד. סריקות קודמות נשארות עם השם הקודם.</p>' : '');
   if (!await modal({ title: e ? 'עריכת עובד' : 'עובד חדש', html, ok: 'שמור' })) return;
   const emp = { old: e ? e['שם'] : '', name: $('em_name').value.trim(), team: $('em_team').value.trim(), site: $('em_site').value, lang: $('em_lang').value, active: $('em_act').checked };
-  try { await api('admin.saveEmployee', { employee: emp }); await loadData(); renderEmps(); notify('נשמר ✓', 'הטלפונים יקבלו את השינוי תוך דקה.'); }
+  try { await api('admin.saveEmployee', { employee: emp, withData: true }); renderEmps(); notify('נשמר ✓', 'הטלפונים יקבלו את השינוי תוך דקה.'); }
   catch (err) { notify('לא נשמר', esc(err.message)); }
 }
 $('btnEmpNew').onclick = () => editEmp('');
@@ -1548,12 +1553,12 @@ $('btnAccount').onclick = async () => {
     $('mOk').onclick = async () => {
       try {
         await api('admin.myAccount', { account: { email: $('a_email').value, weekly: $('a_weekly').checked, faults: $('a_faults').checked,
-          mineOnly: $('a_mine').checked, oldPassword: $('a_old').value, newPassword: $('a_new').value } });
+          mineOnly: $('a_mine').checked, oldPassword: $('a_old').value, newPassword: $('a_new').value }, withData: true });
         done(true);
       } catch (e) { $('a_msg').textContent = e.message; }
     };
   } });
-  if (ok) { await loadData(); notify('נשמר', 'ההגדרות שלך עודכנו.'); }
+  if (ok) notify('נשמר', 'ההגדרות שלך עודכנו.');
 };
 
 /* ---------- ברקודים (תווית לרוחב) ---------- */
