@@ -133,10 +133,38 @@
   .audit td { white-space:pre-line; font-size:13px; }
   fieldset[disabled] { opacity:.7; }
   fieldset { border:0; padding:0; margin:0; min-width:0; }
+  /* ===== דוחות ===== */
+  .rep { display:grid; grid-template-columns:230px 1fr; gap:14px; align-items:start; }
+  @media (max-width:900px) { .rep { grid-template-columns:1fr; } }
+  .repMenu .grp { font-size:12px; color:var(--mut); margin:12px 0 4px; } .repMenu .grp:first-child { margin-top:0; }
+  .repMenu button { display:block; width:100%; text-align:right; background:none; border:1px solid transparent; border-radius:8px; padding:7px 10px; font:inherit; font-size:14px; cursor:pointer; color:var(--fg); }
+  .repMenu button:hover { background:#f1f4f9; } .repMenu button.on { background:#eef2fb; border-color:#c9d4ee; color:#0d1855; font-weight:700; }
+  .rpage { background:#fff; border:1px solid var(--line); border-radius:6px; padding:20px 24px; color:#111; }
+  .rpage .ph { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #0d1855; padding-bottom:10px; margin-bottom:14px; }
+  .rpage h1 { margin:0; font-size:22px; color:#0d1855; } .rpage .sub { font-size:12px; color:#5b6575; margin-top:4px; }
+  .rpage .ph img { height:40px; }
+  .rkpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:8px; margin-bottom:14px; }
+  .rkpi { border:1px solid var(--line); border-radius:10px; padding:10px; } .rkpi .l { font-size:12px; color:#5b6575; } .rkpi .v { font-size:22px; font-weight:800; color:#0d1855; margin-top:3px; }
+  .rkpi .v.red { color:#a3261f; } .rkpi .v.green { color:#17663a; }
+  .rpage h3 { font-size:15px; color:#0d1855; margin:16px 0 6px; }
+  .rpage table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  .rpage th { background:#eef1f6; padding:6px 7px; border:1px solid #d8dee8; text-align:right; }
+  .rpage td { padding:5px 7px; border:1px solid #e3e7ee; vertical-align:top; }
+  .rpage tr.g td { background:#f3f6fa; font-weight:700; color:#0d1855; }
+  .rbar { display:flex; align-items:center; gap:6px; min-width:130px; } .rbar .b { flex:1; height:12px; border-radius:6px; background:#edf0f4; overflow:hidden; } .rbar .b i { display:block; height:100%; }
+  .rpie { display:flex; gap:20px; align-items:center; margin-bottom:12px; flex-wrap:wrap; } .rpie .c { width:170px; height:170px; border-radius:50%; }
+  .rpie .lg span { display:inline-block; width:12px; height:12px; border-radius:3px; margin-inline-end:6px; vertical-align:-1px; }
+  .rheat td { text-align:center; min-width:30px; font-size:11px; }
+  .rnote { background:#fff8e6; border:1px solid #f0d38a; border-radius:8px; padding:8px 10px; font-size:13px; margin:10px 0; }
+  .rpf { margin-top:16px; border-top:1px solid var(--line); padding-top:6px; font-size:11px; color:#5b6575; display:flex; justify-content:space-between; }
+  .rpage * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   @media print {
     body * { visibility:hidden; }
     #printArea, #printArea * { visibility:visible; }
     #printArea { position:absolute; inset:0; gap:5mm; justify-content:flex-start; }
+    body.printRep #printArea, body.printRep #printArea * { visibility:hidden; }
+    body.printRep #rPage, body.printRep #rPage * { visibility:visible; }
+    body.printRep #rPage { position:absolute; inset:0; border:0; padding:0; }
     @page { size:A4; margin:10mm; }
   }
 </style>
@@ -161,6 +189,7 @@
     <button data-tab="faults">תקלות<span class="badge" id="faultBadge"></span></button>
     <button data-tab="devices">מכשירים</button>
     <button data-tab="emps">עובדים</button>
+    <button data-tab="reports">דוחות</button>
     <button data-tab="export">ייצוא</button>
     <button data-tab="sites" id="navSites" class="hide">אתרים</button>
     <button data-tab="managers" id="navManagers" class="hide">מנהלים</button>
@@ -307,6 +336,31 @@
       <p class="mut">עובד חולה / בחופשה: לכל נקודה שבאחריותו בוחרים "לא נדרש" (ההחמצות מוצדקות אוטומטית) או עובד מגבה מאותו צוות (הנקודה עדיין נדרשת, וההחמצות נזקפות עליו).
         "עובד אחראי" לנקודה נקבע בטופס הנקודה.</p>
       <div id="tblAbs"></div></div>
+  </section>
+
+  <section id="tab-reports" class="tab">
+    <div class="rep">
+      <div class="card repMenu" id="repMenu"></div>
+      <div>
+        <div class="card">
+          <div class="bar">
+            <div data-rf="range"><label>מתאריך</label><input type="date" id="rFrom" style="width:160px"></div>
+            <div data-rf="range"><label>עד תאריך</label><input type="date" id="rTo" style="width:160px"></div>
+            <div data-rf="emp"><label>עובד</label><select id="rEmp" style="width:170px"></select></div>
+            <div data-rf="floor"><label>קומה</label><select id="rFloor" style="width:120px"></select></div>
+            <div data-rf="group"><label>קיבוץ לפי</label><select id="rGroup" style="width:140px"></select></div>
+            <div data-rf="days"><label>ימים בלי סריקה</label><input type="number" id="rDays" value="3" min="1" style="width:90px"></div>
+            <div data-rf="min"><label>תקלות לפחות</label><input type="number" id="rMin" value="3" min="2" style="width:90px"></div>
+            <div data-rf="hours"><label>שעות בלי סריקה</label><input type="number" id="rHours" value="24" min="1" style="width:90px"></div>
+            <button class="btn" id="btnRep">הפק דוח</button>
+            <button class="btn sec" id="btnRepPdf">⬇ PDF / הדפסה</button>
+            <button class="btn sec sm" id="btnRepCsv">⬇ Excel</button>
+          </div>
+          <p class="mut" id="repDesc" style="margin:8px 0 0"></p>
+        </div>
+        <div class="rpage" id="rPage"><p class="mut">בחר דוח מהרשימה ולחץ "הפק דוח".</p></div>
+      </div>
+    </div>
   </section>
 
   <section id="tab-sites" class="tab">
@@ -514,7 +568,7 @@ function xtDownload(id) {
 
 /* ---------- סינון אתר/צוות למעלה (משותף ללשוניות) ---------- */
 // כל מנהל רואה בכניסה את האתרים שלו (מנהל-על: הכול). הבחירה נשמרת.
-const SCOPE_TABS = ['dash', 'points', 'qr', 'faults', 'devices', 'emps', 'export'];
+const SCOPE_TABS = ['dash', 'points', 'qr', 'faults', 'devices', 'emps', 'reports', 'export'];
 let scope = { site: '', team: '' };
 function initScope() {
   const saved = LS.get('scope:' + me().user);
@@ -544,7 +598,7 @@ $('scSite').onchange = $('scTeam').onchange = () => {
   scope = { site: $('scSite').value, team: $('scTeam').value }; LS.set('scope:' + me().user, scope); scopeLook();
   const tab = (document.querySelector('nav button.on') || {}).dataset || {};
   if (tab.tab === 'dash') renderToday(); if (tab.tab === 'points') renderPoints(); if (tab.tab === 'qr') renderQrList();
-  if (tab.tab === 'faults') renderFaults(); if (tab.tab === 'devices') renderDevices(); if (tab.tab === 'emps') { renderEmps(); renderAbs(); }
+  if (tab.tab === 'faults') renderFaults(); if (tab.tab === 'devices') renderDevices(); if (tab.tab === 'emps') { renderEmps(); renderAbs(); } if (tab.tab === 'reports' && repData) runReport();
 };
 function showScope(tab) { $('scope').classList.toggle('hide', SCOPE_TABS.indexOf(tab) < 0); }
 
@@ -607,6 +661,7 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = async () => {
   if (b.dataset.tab === 'devices') loadData().then(renderDevices);
   if (b.dataset.tab === 'emps') loadData().then(() => { renderEmps(); loadAbs(); });
   if (b.dataset.tab === 'sites') loadData().then(renderSites);
+  if (b.dataset.tab === 'reports') initReports();
   if (b.dataset.tab === 'managers') loadManagers();
   if (b.dataset.tab === 'audit') loadAudit();
 });
@@ -1134,6 +1189,126 @@ async function editDevice(id) {
   try { await api('admin.saveDevice', { device: dev }); await loadData(); renderDevices(); notify('נשמר ✓', 'הטלפון יקבל את השינוי תוך דקה (אם האפליקציה פתוחה), או מיד כשיפתחו אותה.'); }
   catch (e) { notify('לא נשמר', esc(e.message)); }
 }
+
+/* ---------- דוחות ---------- */
+const REP = [
+  ['סיורים', [['sum', 'סיכום סיורים', 'כמה סיורים היו, כמה הושלמו במלואם, ופירוט הסיורים שלא הושלמו ולמי הם הועברו לטיפול.', ['range', 'emp', 'floor', 'group']],
+              ['scanned', 'נקודות שנסרקו', 'כל הסריקות: מה נסרק, מתי ועל ידי מי.', ['range', 'emp', 'floor', 'group']],
+              ['pct', 'אחוזי השלמה', 'לכל נקודה: כמה בוצע מתוך כמה נדרש. החמצות מוצדקות לא נספרות.', ['range', 'floor', 'group']]]],
+  ['תקלות', [['fsum', 'סיכום תקלות', 'כמה תקלות נפתחו וטופלו, לפי אתר וצוות, ורשימת הפתוחות.', ['range', 'emp', 'group']],
+             ['ftime', 'זמן טיפול בתקלות', 'כמה זמן עבר מהדיווח ועד הסגירה.', ['range', 'group']],
+             ['frep', 'תקלות חוזרות', 'נקודות עם הרבה תקלות בתקופה – ציוד שכדאי לבדוק לעומק.', ['range', 'min']]]],
+  ['עובדים', [['emp', 'ביצועי עובד', 'לכל עובד: סריקות, החמצות, אחוז השלמה, חשודות ותקלות שדיווח.', ['range', 'emp', 'group']],
+              ['abs', 'היעדרויות וגיבויים', 'מי נעדר, מתי, מי גיבה ובאילו נקודות.', ['range', 'emp', 'group']]]],
+  ['מגמות', [['trend', 'מגמה לאורך זמן', 'אחוז ההשלמה שבוע אחרי שבוע (ברירת מחדל: 8 שבועות).', ['range']],
+             ['heat', 'מפת חום', 'באילו שעות וימים יש הכי הרבה החמצות.', ['range']]]],
+  ['בקרה', [['sus', 'סריקות חשודות', 'סריקות מהירות מדי, מטלפון לא מאושר או עם שעון לא מסונכרן.', ['range', 'emp', 'group']],
+            ['neg', 'נקודות מוזנחות', 'נקודות שלא נסרקו בכלל כמה ימים (נכון להיום).', ['days', 'floor', 'group']],
+            ['dev', 'תקינות טלפונים', 'טלפונים שלא שלחו סריקה זמן רב (נכון לעכשיו).', ['hours', 'group']]]]
+];
+const REP_ALL = REP.flatMap(g => g[1]);
+let repCur = 'sum', repData = null, repReady = false;
+function initReports() {
+  if (!repReady) {
+    repReady = true;
+    $('rTo').value = data.today;
+    const d = new Date(data.today + 'T00:00:00'); d.setDate(d.getDate() - 6);
+    $('rFrom').value = d.toISOString().slice(0, 10);
+  }
+  $('rEmp').innerHTML = '<option value="">כל העובדים</option>' + data.employees.filter(e => e['שם']).map(e => '<option value="' + esc(e['שם']) + '">' + esc(e['שם']) + '</option>').join('');
+  const floors = [...new Set(data.points.map(p => String(p['קומה'] || '')).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'he', { numeric: true }));
+  $('rFloor').innerHTML = '<option value="">כל הקומות</option>' + floors.map(f => '<option>' + esc(f) + '</option>').join('');
+  drawRepMenu();
+  if (!repData) runReport();
+}
+function drawRepMenu() {
+  $('repMenu').innerHTML = REP.map(g => '<div class="grp">' + g[0] + '</div>' + g[1].map(r => '<button data-r="' + r[0] + '" class="' + (r[0] === repCur ? 'on' : '') + '">' + r[1] + '</button>').join('')).join('');
+  document.querySelectorAll('#repMenu [data-r]').forEach(b => b.onclick = () => { repCur = b.dataset.r; repData = null; drawRepMenu(); runReport(); });
+  const r = REP_ALL.find(x => x[0] === repCur);
+  $('repDesc').textContent = r[2];
+  document.querySelectorAll('[data-rf]').forEach(el => el.classList.toggle('hide', r[3].indexOf(el.dataset.rf) < 0));
+}
+async function runReport() {
+  $('rPage').innerHTML = '<p class="mut">מפיק דוח…</p>';
+  try {
+    repData = await api('admin.report', { type: repCur, from: $('rFrom').value, to: $('rTo').value, site: scope.site, team: scope.team,
+      emp: $('rEmp').value, floor: $('rFloor').value, days: $('rDays').value, min: $('rMin').value, hours: $('rHours').value });
+    const grp = (repData.sections[0] || {}).group || [];
+    const prev = $('rGroup').value;
+    $('rGroup').innerHTML = '<option value="">ללא קיבוץ</option>' + grp.map(i => '<option value="' + i + '">' + esc(repData.sections[0].cols[i]) + '</option>').join('');
+    if (grp.map(String).indexOf(prev) >= 0) $('rGroup').value = prev;
+    drawReport();
+  } catch (e) { $('rPage').innerHTML = '<p class="mut">שגיאה: ' + esc(e.message) + '</p>'; }
+}
+function drawReport() {
+  const r = repData; if (!r) return;
+  const bar = (v) => { if (v === null || v === undefined || v === '') return '<span class="mut">—</span>';
+    const c = v >= 90 ? '#3BAA5C' : v >= 70 ? '#E0A230' : '#D9534F';
+    return '<div class="rbar"><div class="b"><i style="width:' + v + '%;background:' + c + '"></i></div><b>' + v + '%</b></div>'; };
+  const cell = (sec, i, v) => sec.pct === i ? bar(v) : sec.cols[i] === 'צוות' ? (v ? teamChip(v) : '') : sec.cols[i] === 'אתר' ? (v ? siteChip(v) : '') : esc(v === null ? '—' : v);
+  const range = r.from ? r.from.split('-').reverse().join('/') + ' – ' + r.to.split('-').reverse().join('/') : 'נכון ל-' + r.to.split('-').reverse().join('/');
+  let h = '<div class="ph"><div><h1>' + esc(r.title) + '</h1><div class="sub">' + esc(range) + ' · ' + esc(r.filters) + '</div></div><img src="' + LOGO + '" alt="SDS" onerror="this.outerHTML=\'<b style=&quot;color:#0d1855;font-size:20px&quot;>SDS</b>\'"></div>';
+  if (r.pie) { const t = r.pie.a + r.pie.b, deg = t ? r.pie.a / t * 360 : 0;
+    h += '<div class="rpie"><div class="c" style="background:conic-gradient(#5FA8E8 0 ' + deg + 'deg,#F08A8A ' + deg + 'deg 360deg)"></div><div class="lg">' +
+      '<div><span style="background:#5FA8E8"></span>' + esc(r.pie.la) + ': <b>' + r.pie.a + '</b></div><div style="margin-top:6px"><span style="background:#F08A8A"></span>' + esc(r.pie.lb) + ': <b>' + r.pie.b + '</b></div></div>' +
+      '<div style="flex:1;min-width:280px"><div class="rkpis">' + r.kpis.map(k => '<div class="rkpi"><div class="l">' + esc(k[0]) + '</div><div class="v ' + (k[2] || '') + '">' + esc(k[1]) + '</div></div>').join('') + '</div></div></div>';
+  } else if (r.kpis.length) h += '<div class="rkpis">' + r.kpis.map(k => '<div class="rkpi"><div class="l">' + esc(k[0]) + '</div><div class="v ' + (k[2] || '') + '">' + esc(k[1]) + '</div></div>').join('') + '</div>';
+  if (r.trend) {
+    const W = 680, H = 220, n = r.trend.length, vals = r.trend.map(w => w.pct);
+    const lo = Math.max(0, Math.min(...vals.filter(v => v !== null).concat([100])) - 10);
+    const x = i => 40 + i * (W - 60) / Math.max(1, n - 1), y = v => H - 25 - (v - lo) / (100 - lo || 1) * (H - 50);
+    const pts = r.trend.map((w, i) => w.pct === null ? null : [x(i), y(w.pct)]).filter(Boolean);
+    h += '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:760px">' +
+      [0, .25, .5, .75, 1].map(f => { const v = Math.round(lo + f * (100 - lo)); return '<line x1="40" x2="' + (W - 10) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#e3e7ee"/><text x="2" y="' + (y(v) + 4) + '" font-size="10" fill="#5b6575">' + v + '%</text>'; }).join('') +
+      '<polyline points="' + pts.map(p => p.join(',')).join(' ') + '" fill="none" stroke="#0d1855" stroke-width="3"/>' +
+      r.trend.map((w, i) => (w.pct === null ? '' : '<circle cx="' + x(i) + '" cy="' + y(w.pct) + '" r="4" fill="#0d1855"/><text x="' + (x(i) - 12) + '" y="' + (y(w.pct) - 9) + '" font-size="11" fill="#0d1855">' + w.pct + '%</text>') +
+        '<text x="' + (x(i) - 14) + '" y="' + (H - 6) + '" font-size="10" fill="#5b6575">' + esc(w.label) + '</text>').join('') + '</svg>';
+  }
+  if (r.heat) {
+    const g = r.heat.grid, max = Math.max(1, ...Object.values(g));
+    h += '<table class="rheat"><tr><th>שעה</th>' + r.heat.days.map(d => '<th>' + d + "'</th>").join('') + '</tr>' +
+      Array.from({ length: 24 }, (_, hr) => '<tr><th>' + String(hr).padStart(2, '0') + ':00</th>' + r.heat.days.map((d, i) => { const v = g[i + '|' + hr] || 0;
+        return '<td style="background:rgba(217,83,79,' + (v / max).toFixed(2) + ');color:' + (v / max > .55 ? '#fff' : '#111') + '">' + (v || '') + '</td>'; }).join('') + '</tr>').join('') + '</table>';
+  }
+  if (r.note) h += '<div class="rnote">' + esc(r.note) + '</div>';
+  const gi = $('rGroup').value === '' ? null : +$('rGroup').value;
+  r.sections.forEach((sec, si) => {
+    const show = sec.cols.map((c, i) => i).filter(i => !(sec.hide || []).includes(i) || i === gi);
+    h += '<h3>' + esc(sec.title) + ' (' + sec.rows.length + ')</h3>';
+    if (!sec.rows.length) { h += '<p class="mut">אין נתונים</p>'; return; }
+    let rows = sec.rows;
+    if (si === 0 && gi !== null) {
+      const groups = {}; rows.forEach(row => (groups[row[gi] || '—'] = groups[row[gi] || '—'] || []).push(row));
+      h += '<table><tr>' + show.filter(i => i !== gi).map(i => '<th>' + esc(sec.cols[i]) + '</th>').join('') + '</tr>' +
+        Object.keys(groups).sort((a, b) => a.localeCompare(b, 'he', { numeric: true })).map(k => '<tr class="g"><td colspan="' + (show.length - 1) + '">' + esc(sec.cols[gi]) + ': ' + esc(k) + ' (' + groups[k].length + ')</td></tr>' +
+          groups[k].map(row => '<tr>' + show.filter(i => i !== gi).map(i => '<td>' + cell(sec, i, row[i]) + '</td>').join('') + '</tr>').join('')).join('') + '</table>';
+    } else {
+      h += '<table><tr>' + show.map(i => '<th>' + esc(sec.cols[i]) + '</th>').join('') + '</tr>' +
+        rows.map(row => '<tr>' + show.map(i => '<td>' + cell(sec, i, row[i]) + '</td>').join('') + '</tr>').join('') + '</table>';
+    }
+  });
+  h += '<div class="rpf"><span>הופק במערכת הסיורים של SDS · ' + esc(r.generated) + ' · ' + esc(me().name || '') + '</span><span>' + esc(r.title) + '</span></div>';
+  $('rPage').innerHTML = h;
+}
+$('btnRep').onclick = runReport;
+$('rGroup').onchange = drawReport;
+$('btnRepPdf').onclick = async () => {
+  if (!repData) await runReport();
+  if (!repData) return;
+  document.body.classList.add('printRep');
+  const done = () => { document.body.classList.remove('printRep'); window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  window.print();
+  setTimeout(done, 1500);
+};
+$('btnRepCsv').onclick = () => {
+  const r = repData; if (!r || !r.sections.length) return notify('Excel', 'קודם מפיקים דוח.');
+  const q = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const lines = []; r.sections.forEach(sec => { lines.push(q(sec.title)); lines.push(sec.cols.map(q).join(',')); sec.rows.forEach(row => lines.push(row.map(q).join(','))); lines.push(''); });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+  a.download = r.title + ' ' + (r.from || '') + ' ' + r.to + '.csv'; a.click();
+};
 
 /* ---------- אתרים (מנהל-על) ---------- */
 function renderSites() {
