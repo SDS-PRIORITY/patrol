@@ -1036,7 +1036,7 @@ async function editDevice(id) {
   if (!ok) return;
   const dev = { DeviceID: d.DeviceID, 'שם מכשיר': $('dv_name').value, 'אתר': $('dv_site').value, 'צוות': $('dv_team').value,
     'עובד קבוע': $('dv_emp').value, 'פעיל': $('dv_act').checked };
-  try { await api('admin.saveDevice', { device: dev }); await loadData(); renderDevices(); notify('נשמר ✓', 'הטלפון יקבל את השינוי בפעם הבאה שיפתחו בו את האפליקציה (או לחיצה על רענון בדפדפן).'); }
+  try { await api('admin.saveDevice', { device: dev }); await loadData(); renderDevices(); notify('נשמר ✓', 'הטלפון יקבל את השינוי תוך דקה (אם האפליקציה פתוחה), או מיד כשיפתחו אותה.'); }
   catch (e) { notify('לא נשמר', esc(e.message)); }
 }
 

@@ -46,13 +46,15 @@
   #ovChips { margin-top:12px; } #ovChips span { display:inline-block; margin:0 4px; padding:3px 12px; border-radius:20px; background:#fff; font-weight:700; font-size:15px; }
   #ovActions { display:none; width:100%; max-width:420px; margin-top:26px; gap:12px; }
   #ovActions.on { display:flex; }
-  #ovActions button { flex:1; border:3px solid #fff; border-radius:16px; padding:18px 8px; font-size:20px; font-weight:800; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  #ovActions button { flex:1; border:3px solid #fff; border-radius:16px; padding:18px 8px; font-size:18px; font-weight:800; display:flex; flex-direction:column; align-items:center; gap:4px; }
   #ovActions button b { font-size:38px; line-height:1; }
   #btnOk { background:#fff; color:var(--ok); }
   #btnFault { background:#f59e0b; color:#1c1917; }
   #ovBar { height:6px; background:rgba(255,255,255,.85); width:100%; max-width:420px; margin-top:14px; border-radius:3px; transform-origin:right; }
   [dir=ltr] #ovBar { transform-origin:left; }
   #ovBar.run { animation:shrink 4s linear forwards; }
+  #ovCount { margin-top:14px; font-size:14px; opacity:.85; min-height:18px; }
+  #ovActions button#btnOk { flex:1.4; }
   @keyframes shrink { from { transform:scaleX(1) } to { transform:scaleX(0) } }
   /* מסך תקלה */
   #faultPoint { display:inline-block; padding:4px 12px; border-radius:20px; color:#fff; font-weight:700; margin-bottom:14px; }
@@ -123,7 +125,7 @@
 <div id="overlay">
   <div id="ovIcon"></div><div id="ovTitle"></div><div id="ovSub"></div><div id="ovChips"></div><div id="ovStatus"></div>
   <div id="ovActions"><button id="btnOk"><b>✓</b><span></span></button><button id="btnFault"><b>⚠</b><span></span></button></div>
-  <div id="ovBar"></div>
+  <div id="ovBar"></div><div id="ovCount"></div>
 </div>
 
 <script>
@@ -203,6 +205,8 @@ async function loadConfig() {
 /* ---------- מצב המכשיר ---------- */
 const fixedEmp = () => cfg && cfg.device && cfg.device.employee;
 const devTeam = () => (cfg && cfg.device && cfg.device.team) || '';
+// הצוות שמותר לו לסרוק: של הטלפון, ואם לטלפון אין צוות – של העובד שנבחר
+const myTeam = () => devTeam() || (emp && emp.team) || '';
 
 function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
@@ -261,7 +265,7 @@ function showEmployees() {
   const list = $('empList');
   list.innerHTML = '';
   const teams = {};
-  (cfg.employees || []).forEach(e => (teams[e.team || '—'] = teams[e.team || '—'] || []).push(e));
+  (cfg.employees || []).filter(e => !devTeam() || e.team === devTeam()).forEach(e => (teams[e.team || '—'] = teams[e.team || '—'] || []).push(e));
   Object.keys(teams).forEach(tm => {
     const h = document.createElement('div'); h.className = 'team'; h.textContent = tm;
     h.style.background = teamClr(tm); list.appendChild(h);
@@ -312,7 +316,7 @@ function onCode(text) {
   const m = String(text).trim().match(/^PT:(.+)$/);
   const p = m && cfg.points.find(x => x.id === m[1]);
   if (!p) return feedback('err', '✕', t('unknown'), t('unknownSub'));
-  if (devTeam() && p.team && p.team !== devTeam()) return feedback('err', '✕', t('wrongTeam'), pname(p), '', p);
+  if (myTeam() && p.team && p.team !== myTeam()) return feedback('err', '✕', t('wrongTeam'), pname(p) + ' · ' + t('wrongTeamSub'), '', p);
 
   const last = lastByPoint[p.id];
   if (last && Date.now() - last < 60000)
@@ -348,6 +352,7 @@ async function sync(watchId) {
         if (!mine.ok) {
           setOvStatus(mine.code === 'wrong_team' ? t('wrongTeam') : mine.error);
           $('overlay').className = 'show err'; $('ovActions').classList.remove('on'); beep('err');
+          clearTimeout(ovTimer); clearInterval(ovTick); $('ovCount').textContent = ''; ovTimer = setTimeout(closeOverlay, 4000);
         } else if (!mine.duplicate) {
           setOvStatus((t(STATUS_KEY[mine.status]) || mine.status) + (lang() === 'he' && mine.note ? ' · ' + mine.note : ''));
           // סריקה מחוץ לטווח: המסך הופך לכתום כדי שהעובד יבין שהיא לא נספרה
@@ -371,7 +376,8 @@ async function sync(watchId) {
 }
 
 /* ---------- חיווי: מסך, צליל, רטט ---------- */
-let audioCtx = null, ovTimer = null;
+let audioCtx = null, ovTimer = null, ovTick = null;
+const OV_WAIT = 2 * 60000;
 function unlockAudio() { try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch (e) {} }
 function beep(kind) {
   if (!audioCtx) return;
@@ -394,19 +400,27 @@ function feedback(kind, icon, title, sub, status = '', point = null, withActions
   $('ovChips').innerHTML = point ? [[point.team, teamClr(point.team)], [point.site, siteClr(point.site)]]
     .filter(c => c[0]).map(c => '<span style="color:' + c[1] + '">' + esc(c[0]) + '</span>').join('') : '';
   $('ovActions').classList.toggle('on', withActions);
-  const bar = $('ovBar'); bar.classList.remove('run'); void bar.offsetWidth; bar.classList.add('run');
-  bar.style.display = withActions ? '' : 'none';
+  $('ovBar').style.display = 'none';
   beep(kind);
   if (navigator.vibrate) navigator.vibrate(kind === 'ok' ? 120 : [200, 100, 200]);
-  clearTimeout(ovTimer);
-  // עם כפתורים: 4 שניות ואז נסגר כ"תקין". בלי כפתורים: 2.5 שניות
-  ovTimer = setTimeout(closeOverlay, withActions ? 4000 : 2500);
+  clearTimeout(ovTimer); clearInterval(ovTick);
+  if (withActions) {
+    // נשאר פתוח עד שהעובד בוחר "תקין" או "יש תקלה". אם לא בחר – נסגר לבד אחרי 2 דקות (הסריקה כבר נשמרה)
+    const until = Date.now() + OV_WAIT;
+    const tick = () => { const s = Math.max(0, Math.ceil((until - Date.now()) / 1000));
+      $('ovCount').textContent = t('autoClose', Math.floor(s / 60) + ':' + pad(s % 60)); };
+    tick(); ovTick = setInterval(tick, 1000);
+    ovTimer = setTimeout(closeOverlay, OV_WAIT);
+  } else {
+    $('ovCount').textContent = '';
+    ovTimer = setTimeout(closeOverlay, 3000);
+  }
 }
-function closeOverlay() { clearTimeout(ovTimer); $('overlay').className = ''; busy = false; }
+function closeOverlay() { clearTimeout(ovTimer); clearInterval(ovTick); $('overlay').className = ''; busy = false; }
 const setOvStatus = (x) => { if ($('overlay').classList.contains('show')) $('ovStatus').textContent = x; };
 
 $('btnOk').onclick = (e) => { e.stopPropagation(); closeOverlay(); };
-$('btnFault').onclick = (e) => { e.stopPropagation(); clearTimeout(ovTimer); $('overlay').className = ''; openFault(); };
+$('btnFault').onclick = (e) => { e.stopPropagation(); clearTimeout(ovTimer); clearInterval(ovTick); $('overlay').className = ''; openFault(); };
 $('overlay').onclick = () => { if (!$('ovActions').classList.contains('on')) closeOverlay(); };
 
 /* ---------- דיווח תקלה ---------- */
@@ -486,21 +500,27 @@ document.body.addEventListener('click', unlockAudio, { once: true });
 window.addEventListener('online', () => { updateHeader(); sync(); loadConfig().then(refreshDevice); });
 window.addEventListener('offline', updateHeader);
 setInterval(sync, 20000);                                                    // ניסיון שליחה חוזר
-setInterval(() => { if (navigator.onLine) loadConfig().then(refreshDevice); }, 10 * 60000); // שינויים מהמנהל
+// שינויים מהמנהל: כל דקה כשהאפליקציה פתוחה ומוצגת (טלפון ברקע/כבוי לא שולח בקשות)
+setInterval(() => { if (navigator.onLine && document.visibilityState === 'visible' && deviceId) loadConfig().then(refreshDevice); }, 60000);
 setInterval(() => { if (deviceId && cfg && needEmployee() && $('scr-scan').classList.contains('on')) showEmployees(); }, 60000);
 
-// המנהל שינה שיוך/ביטל מכשיר → מעדכנים את המסך (רק כשהעובד במסך הסריקה)
+// הגיעו הגדרות חדשות מהשרת (המנהל שינה שיוך / חסם / שחרר / עדכן עובדים) → מעדכנים את המסך מיד
 function refreshDevice() {
   if (!cfg || !deviceId) return;
-  const onScan = $('scr-scan').classList.contains('on') || $('scr-employee').classList.contains('on');
-  if (cfg.deviceOk === false || (fixedEmp() && (!emp || emp.name !== cfg.device.employee)) || (!fixedEmp() && emp && devTeam() && emp.team !== devTeam())) {
-    if (onScan) { if (!fixedEmp()) { emp = null; LS.set('emp', null); } route(); }
-  } else { applyLang(); updateHeader(); }
+  if ($('scr-register').classList.contains('on') || $('scr-fault') && $('scr-fault').classList.contains('on')) return;   // לא מפריעים באמצע טופס
+  const onScan = $('scr-scan').classList.contains('on'), onEmp = $('scr-employee').classList.contains('on'), onBlocked = $('scr-blocked').classList.contains('on');
+  const wrong = cfg.deviceOk === false || (fixedEmp() && (!emp || emp.name !== cfg.device.employee)) ||
+    (!fixedEmp() && emp && devTeam() && emp.team !== devTeam()) ||
+    (!fixedEmp() && emp && !(cfg.employees || []).some(e => e.name === emp.name));     // העובד הושבת/הוסר
+  if (wrong && (onScan || onEmp)) { if (!fixedEmp()) { emp = null; LS.set('emp', null); } return route(); }
+  if (onBlocked && cfg.deviceOk !== false) return route();                              // הטלפון שוחרר מחסימה
+  if (onEmp) return showEmployees();                                                    // רשימת העובדים התעדכנה
+  applyLang(); updateHeader();
 }
 
 // השארת המסך דלוק בזמן סיור
 async function keepAwake() { try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch (e) {} }
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { keepAwake(); sync(); } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { keepAwake(); sync(); if (deviceId && navigator.onLine) loadConfig().then(refreshDevice); } });
 
 /* ---------- הפעלה ---------- */
 (async function boot() {
@@ -511,8 +531,14 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
   keepAwake();
   applyLang();
   updateHeader();
-  if (deviceId) { if (!cfg) await loadConfig(); else await Promise.race([loadConfig(), new Promise(r => setTimeout(r, 2500))]); }
+  let fresh = null;
+  if (deviceId) {
+    if (!cfg) await loadConfig();
+    else { fresh = loadConfig(); await Promise.race([fresh, new Promise(r => setTimeout(r, 2500))]); }
+  }
   route();
+  // אם השרת ענה לאט (יותר מ-2.5 שניות) – מעדכנים את המסך כשההגדרות החדשות מגיעות
+  if (fresh) fresh.then(refreshDevice);
   sync();
 })();
 </script>
