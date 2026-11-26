@@ -72,7 +72,13 @@
 <!-- אישור מכשיר (פעם אחת, על ידי המנהל – תמיד בעברית) -->
 <section id="scr-register" class="screen" dir="rtl">
   <h2>הפעלת טלפון סיורים</h2>
-  <p class="msg" style="margin-top:0">הגדרה חד־פעמית על ידי מנהל המערכת.</p>
+  <p class="msg" style="margin-top:0">מקלידים את קוד ההפעלה שקיבלת מהמנהל (6 ספרות).<br><span dir="ltr">Enter the 6-digit activation code</span></p>
+  <input id="actCode" inputmode="numeric" autocomplete="one-time-code" maxlength="7" dir="ltr" placeholder="000 000"
+    style="font-size:34px;text-align:center;letter-spacing:8px;font-weight:700">
+  <button class="btn" id="btnAct">הפעל טלפון</button>
+  <div class="msg" id="actMsg"></div>
+  <details id="regMgr" style="margin-top:18px;border-top:1px solid rgba(255,255,255,.15);padding-top:12px">
+  <summary style="cursor:pointer;font-weight:600">אין קוד? אישור עם מנהל באתר</summary>
   <label class="lbl">שם המכשיר</label>
   <input id="regName" placeholder="למשל: טלפון חשמל 1 / טלפון של דנה">
   <label class="lbl">אתר</label>
@@ -88,6 +94,7 @@
   <input id="regPw" type="password" autocomplete="current-password">
   <button class="btn" id="btnReg">אשר מכשיר</button>
   <div class="msg" id="regMsg"></div>
+  </details>
 </section>
 
 <!-- מכשיר שבוטל -->
@@ -239,6 +246,7 @@ async function showRegister() {
   $('regSite').innerHTML = ((cfg && cfg.sites) || []).map(x => '<option>' + esc(x) + '</option>').join('') || '<option value="">—</option>';
   $('regTeam').innerHTML = '<option value="">— כל הצוותים —</option>' + teams.map(x => '<option>' + esc(x) + '</option>').join('');
   fillRegEmp();
+  if (urlCode && !showRegister.usedUrl) { showRegister.usedUrl = true; $('actCode').value = urlCode.slice(0, 3) + ' ' + urlCode.slice(3); activate(urlCode); }
 }
 function fillRegEmp() {
   const team = $('regTeam').value;
@@ -482,6 +490,29 @@ $('btnFaultSend').onclick = () => {
   feedback('ok', '✓', navigator.onLine ? t('faultSent') : t('faultSaved'), pname(p), '', p);
   sync();
 };
+
+/* ---------- הפעלה בקוד (בלי שם משתמש וסיסמה) ---------- */
+// קישור מהמנהל: index.html?code=123456 → הקוד מוזן ומופעל לבד
+const urlCode = (new URLSearchParams(location.search).get('code') || '').replace(/\D/g, '');
+if (urlCode) history.replaceState(null, '', location.pathname);
+async function activate(code) {
+  unlockAudio();
+  code = String(code || '').replace(/\D/g, '');
+  if (code.length !== 6) { $('actMsg').textContent = 'הקוד צריך להיות 6 ספרות'; return; }
+  $('actMsg').textContent = 'מפעיל…'; $('btnAct').disabled = true;
+  try {
+    const r = await api('activateDevice', { code });
+    deviceId = r.deviceId; LS.set('deviceId', deviceId);
+    $('actCode').value = '';
+    emp = null; LS.set('emp', null);
+    await loadConfig();
+    route();
+  } catch (e) { $('actMsg').textContent = e.message; }
+  finally { $('btnAct').disabled = false; }
+}
+$('btnAct').onclick = () => activate($('actCode').value);
+$('actCode').oninput = (e) => { const d = e.target.value.replace(/\D/g, '').slice(0, 6); e.target.value = d.length > 3 ? d.slice(0, 3) + ' ' + d.slice(3) : d; };
+$('actCode').onkeydown = (e) => { if (e.key === 'Enter') $('btnAct').click(); };
 
 /* ---------- אירועים ---------- */
 $('btnReg').onclick = async () => {

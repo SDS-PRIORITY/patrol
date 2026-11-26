@@ -319,13 +319,19 @@
 
   <!-- מכשירים -->
   <section id="tab-devices" class="tab">
-    <div class="card"><h2>טלפונים מאושרים</h2>
+    <div class="card"><div class="bar" style="justify-content:space-between"><h2 style="margin:0">טלפונים מאושרים</h2><button class="btn" id="btnDevNew">+ טלפון חדש</button></div>
       <div id="tblDevices"></div>
       <details class="tr"><summary>איך זה עובד?</summary><p class="mut">
         <b>טלפון משותף</b> (בלי עובד קבוע): כל עובד בוחר את שמו בתחילת משמרת, ורואה רק את העובדים של הצוות.<br>
         <b>עובד קבוע</b>: הטלפון נעול עליו ונפתח בשפה שלו (עמודת "שפה" בלשונית "עובדים").<br>
-        טלפון שמשויך לצוות לא יכול לסרוק ברקודים של צוות אחר. טלפון שאבד: לחץ "ערוך" ובטל את הסימון "פעיל".
+        טלפון שמשויך לצוות לא יכול לסרוק ברקודים של צוות אחר. טלפון שאבד: לחץ "ערוך" ובטל את הסימון "פעיל".<br>
+        <b>טלפון חדש</b>: לוחצים "+ טלפון חדש", בוחרים אתר, צוות ועובד, ומקבלים קוד של 6 ספרות (וגם QR וקישור לוואטסאפ).
+        בטלפון מקלידים את הקוד – בלי שם משתמש וסיסמה. הקוד חד-פעמי ובתוקף 7 ימים. אפשר גם לאשר באתר עם שם המשתמש והסיסמה שלך, כמו קודם.
       </p></details>
+    </div>
+    <div class="card" id="actCard"><h2>קודי הפעלה ממתינים</h2>
+      <p class="mut" style="margin-top:-4px">טלפונים שהוכנו מראש ועוד לא הופעלו. אחרי שמקלידים את הקוד בטלפון הוא עובר לרשימה למעלה.</p>
+      <div id="tblActs"></div>
     </div>
   </section>
 
@@ -1147,7 +1153,7 @@ function renderFaults() {
 function renderDevices() {
   const devs = data.devices.filter(d => inScope(d['אתר'], d['צוות']));
   xt('tblDevices', { file: 'טלפונים', rows: devs,
-    empty: 'אין טלפונים באתר/צוות שבחרת. טלפון חדש: פותחים את האפליקציה בטלפון ומאשרים עם שם המשתמש והסיסמה שלך.',
+    empty: 'אין טלפונים באתר/צוות שבחרת. טלפון חדש: לוחצים "+ טלפון חדש" ומקבלים קוד הפעלה.',
     rc: d => isOn(d['פעיל']) ? '' : 'row-ex',
     cols: [
       { k: 'name', t: 'שם המכשיר', v: d => d['שם מכשיר'], nf: true },
@@ -1161,7 +1167,94 @@ function renderDevices() {
         h: d => '<span class="mut">' + esc(String(d['תאריך אישור']).slice(0, 10)) + (d['אושר על ידי'] ? '<br>' + esc(d['אושר על ידי']) : '') + '</span>' },
       { k: 'btn', t: '', x: true, h: d => d['שוחרר'] ? '' : d._canEdit ? '<button class="btn sec sm" data-dedit="' + esc(d.DeviceID) + '">ערוך</button>' : '<span class="ro">צפייה בלבד</span>' }],
     after: () => document.querySelectorAll('#tblDevices [data-dedit]').forEach(b => b.onclick = () => editDevice(b.dataset.dedit)) });
+  renderActs();
 }
+/* ---------- טלפון חדש בקוד הפעלה (בלי סיסמה בטלפון) ---------- */
+function renderActs() {
+  const acts = (data.activations || []).filter(a => inScope(a.site, a.team));
+  xt('tblActs', { file: 'קודי הפעלה', rows: acts, empty: 'אין קודים ממתינים.',
+    cols: [
+      { k: 'name', t: 'שם המכשיר', v: a => a.name, nf: true },
+      { k: 'site', t: 'אתר', v: a => a.site, h: a => siteChip(a.site) },
+      { k: 'team', t: 'צוות', v: a => a.team || 'כל הצוותים', h: a => a.team ? teamChip(a.team) : '<span class="mut">כל הצוותים</span>' },
+      { k: 'emp', t: 'עובד קבוע', v: a => a.emp || 'טלפון משותף', h: a => a.emp ? esc(a.emp) : '<span class="mut">טלפון משותף</span>' },
+      { k: 'code', t: 'קוד', v: a => a.code, nf: true, h: a => '<b dir="ltr" style="letter-spacing:2px">' + esc(a.code.slice(0, 3) + ' ' + a.code.slice(3)) + '</b>' },
+      { k: 'exp', t: 'בתוקף עד', v: a => a.expires, nf: true, h: a => '<span class="mut">' + esc(a.expires) + '</span>' },
+      { k: 'by', t: 'נוצר על ידי', v: a => a.by + ' · ' + a.created, nf: true, h: a => '<span class="mut">' + esc(a.by) + '<br>' + esc(a.created) + '</span>' },
+      { k: 'btn', t: '', x: true, h: a => '<button class="btn sec sm" data-ashow="' + esc(a.code) + '">הצג / שלח</button> <button class="btn sec sm" data-acancel="' + esc(a.code) + '" style="color:var(--errT)">בטל</button>' }],
+    after: () => {
+      document.querySelectorAll('#tblActs [data-ashow]').forEach(b => b.onclick = () => showActivation(data.activations.find(a => a.code === b.dataset.ashow)));
+      document.querySelectorAll('#tblActs [data-acancel]').forEach(b => b.onclick = () => cancelActivation(b.dataset.acancel));
+    } });
+}
+async function newActivation() {
+  const sites = data.editSites || [];
+  if (!sites.length) return notify('אין הרשאה', 'אין לך אתרים לעריכה.');
+  const emps = data.employees.filter(e => isOn(e['פעיל']));
+  const empOpts = (team, site) => '<option value="">— טלפון משותף (כל עובד בוחר את שמו) —</option>' + emps
+    .filter(e => (!team || e['צוות'] === team) && (!e['אתר'] || !site || e['אתר'] === site))
+    .map(e => '<option value="' + esc(e['שם']) + '">' + esc(e['שם']) + (e['שפה'] && e['שפה'] !== 'עברית' ? ' (' + esc(e['שפה']) + ')' : '') + '</option>').join('');
+  const curSite = sites.indexOf($('scSite').value) >= 0 ? $('scSite').value : sites[0];
+  const curTeam = $('scTeam') ? $('scTeam').value : '';
+  const html = '<p class="mut" style="margin-top:0">מכינים את הטלפון מראש. תקבל קוד של 6 ספרות – מקלידים אותו בטלפון, בלי שם משתמש וסיסמה.</p>' +
+    '<div class="grid" style="grid-template-columns:1fr 1fr">' +
+    '<div><label>שם המכשיר</label><input id="ac_name" placeholder="למשל: טלפון חשמל 2"></div>' +
+    '<div><label>אתר</label><select id="ac_site">' + sites.map(x => '<option' + (x === curSite ? ' selected' : '') + ' value="' + esc(x) + '">' + esc(x) + '</option>').join('') + '</select></div>' +
+    '<div><label>צוות</label><select id="ac_team"><option value="">— כל הצוותים —</option>' + (data.teams || []).map(x => '<option' + (x === curTeam ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select></div>' +
+    '<div><label>עובד קבוע</label><select id="ac_emp">' + empOpts(curTeam, curSite) + '</select></div></div>';
+  const ok = await modal({ title: 'טלפון חדש – קוד הפעלה', html, ok: 'צור קוד', onOpen: () => {
+    const re = () => { $('ac_emp').innerHTML = empOpts($('ac_team').value, $('ac_site').value); };
+    $('ac_team').onchange = $('ac_site').onchange = re;
+    setTimeout(() => $('ac_name').focus(), 50);
+  } });
+  if (!ok) return;
+  const a = { name: $('ac_name').value.trim(), site: $('ac_site').value, team: $('ac_team').value, employee: $('ac_emp').value };
+  try {
+    const r = await api('admin.createActivation', { activation: a, withData: true });
+    renderActs();
+    showActivation({ code: r.code, name: r.name, site: r.site, team: r.team, emp: r.employee, expires: r.expires });
+  } catch (e) { notify('שגיאה', esc(e.message)); }
+}
+function activationLink(code) {               // index.html שליד מסך המנהל (באותה תיקייה ב-GitHub Pages)
+  try { if (/^https?:/.test(location.href)) return new URL('index.html?code=' + code, location.href).href; } catch (e) {}
+  return 'index.html?code=' + code;
+}
+function activationText(a) {
+  return 'הפעלת טלפון סיורים – ' + a.name + '\n' +
+    '1. פותחים בטלפון את הקישור: ' + activationLink(a.code) + '\n' +
+    '2. או נכנסים לאפליקציה ומקלידים את הקוד: ' + a.code + '\n' +
+    'הקוד חד-פעמי ובתוקף עד ' + a.expires + '.';
+}
+function showActivation(a) {
+  if (!a) return;
+  let qr = '';
+  try { const q = qrcode(0, 'M'); q.addData(activationLink(a.code)); q.make(); qr = q.createSvgTag({ cellSize: 5, margin: 1, scalable: true }); } catch (e) {}
+  const html = '<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">' +
+    '<div style="flex:1;min-width:220px">' +
+    '<div class="mut">' + esc(a.name) + ' · ' + esc(a.site) + (a.team ? ' · ' + esc(a.team) : '') + ' · ' + esc(a.emp || 'טלפון משותף') + '</div>' +
+    '<div dir="ltr" style="font-size:44px;font-weight:800;letter-spacing:8px;margin:10px 0;color:var(--fg)">' + esc(a.code.slice(0, 3) + ' ' + a.code.slice(3)) + '</div>' +
+    '<div class="mut">חד-פעמי · בתוקף עד ' + esc(a.expires) + '</div>' +
+    '<ol style="margin:12px 0 0;padding-inline-start:18px;line-height:1.7">' +
+    '<li>שולחים לעובד את הקוד, או את הקישור בוואטסאפ</li><li>בטלפון: מקלידים את הקוד באפליקציה, או סורקים את ה-QR</li><li>הטלפון נפתח עם ההגדרות שבחרת</li></ol></div>' +
+    (qr ? '<div style="width:170px;flex:none;text-align:center"><div style="background:#fff;padding:6px;border-radius:8px">' + qr + '</div><div class="mut" style="font-size:12px;margin-top:4px">לסריקה מהטלפון החדש</div></div>' : '') +
+    '</div><div class="bar" style="margin-top:14px;gap:8px">' +
+    '<a class="btn" id="ac_wa" style="text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(activationText(a)) + '">שלח בוואטסאפ</a>' +
+    '<button type="button" class="btn sec" id="ac_copy">העתק הודעה</button></div>';
+  modal({ title: 'קוד הפעלה מוכן ✓', html, cancel: false, ok: 'סגור', onOpen: () => {
+    $('ac_copy').onclick = async () => {
+      try { await navigator.clipboard.writeText(activationText(a)); $('ac_copy').textContent = 'הועתק ✓'; }
+      catch (e) { $('ac_copy').textContent = 'לא הצלחתי להעתיק'; }
+    };
+  } });
+}
+async function cancelActivation(code) {
+  const a = (data.activations || []).find(x => x.code === code); if (!a) return;
+  if (!await modal({ title: 'ביטול קוד', html: 'לבטל את הקוד של "' + esc(a.name) + '"? אחרי הביטול אי אפשר יהיה להפעיל איתו טלפון.', ok: 'בטל קוד', cancelText: 'חזור' })) return;
+  try { await api('admin.cancelActivation', { code, withData: true }); renderActs(); }
+  catch (e) { notify('שגיאה', esc(e.message)); }
+}
+$('btnDevNew').onclick = () => newActivation();
+
 /** עריכת טלפון בחלון: שם, אתר, צוות, עובד קבוע, פעיל */
 async function editDevice(id) {
   const d = data.devices.find(x => x.DeviceID === id); if (!d) return;
